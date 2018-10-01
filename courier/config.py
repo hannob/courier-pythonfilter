@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
-import anydbm
-import ConfigParser
+import dbm
+import configparser
 import ipaddress
 import os
 import socket
@@ -27,7 +27,7 @@ import sys
 
 try:
     import DNS
-except:
+except ImportError:
     DNS = None
 
 
@@ -53,11 +53,11 @@ def _setup():
     except OSError:
         pass
     else:
-        for chOutLine in ch.stdout:
+        for ch_out_line in ch.stdout:
             try:
-                (setting, valueN) = chOutLine.split('=', 1)
-                value = valueN.strip()
-            except:
+                (setting, value) = ch_out_line.split('=', 1)
+                value = value.strip()
+            except ValueError:
                 continue
             if setting in ('prefix', 'exec_prefix', 'bindir', 'sbindir',
                            'libexecdir', 'sysconfdir', 'datadir', 'localstatedir',
@@ -75,11 +75,10 @@ def _setup():
     except OSError:
         pass
     else:
-        chOutLine = ch.stdout.readline()
-        versOutput = chOutLine.split(' ')
-        if versOutput[0] == 'Courier':
-            global version
-            version = versOutput[1]
+        ch_out_line = ch.stdout.readline()
+        vers_output = ch_out_line.split(' ')
+        if vers_output[0] == 'Courier':
+            globals()['version'] = vers_output[1]
         # Catch the exit of courier --version
         try:
             ch.wait()
@@ -90,22 +89,22 @@ def _setup():
         DNS.DiscoverNameServers()
 
 
-def _openDbm(path):
+def _open_dbm(path):
     # If the DBM doesn't exist, os.stat will raise an exception, and the
     # logging code will be bypassed.
     os.stat(path)
     try:
-        dbm = anydbm.open(path, 'r')
+        config_dbm = dbm.open(path, 'r')
     except ImportError:
         sys.stderr.write('Couldn\'t load python support for reading %s\n' % path)
         raise
-    except anydbm.error:
+    except dbm.error:
         sys.stderr.write('Error reading %s\n' % path)
         raise
-    return dbm
+    return config_dbm
 
 
-def isMinVersion(minVersion):
+def is_min_version(min_version):
     """Check for minumum version of Courier.
 
     Return True if the version of courier currently installed is newer
@@ -115,7 +114,7 @@ def isMinVersion(minVersion):
     if version == 'unknown':
         return False
     curv = version.split('.')
-    minv = minVersion.split('.')
+    minv = min_version.split('.')
     return curv >= minv
 
 
@@ -127,7 +126,7 @@ def read1line(filename):
     return cfile.readline().strip()
 
 
-def me(_cached = [None]):
+def me(_cached=[None]):
     """Return Courier's "me" value.
 
     Call this function with no arguments.
@@ -166,7 +165,7 @@ def esmtphelo(connection=None):
     return val
 
 
-def defaultdomain(_cached = [None]):
+def defaultdomain(_cached=[None]):
     """Return Courier's "defaultdomain" value.
 
     Call this function with no arguments.
@@ -184,7 +183,7 @@ def defaultdomain(_cached = [None]):
     return me()
 
 
-def dsnfrom(_cached = [None]):
+def dsnfrom(_cached=[None]):
     """Return Courier's "dsnfrom" value.
 
     Call this function with no arguments.
@@ -206,7 +205,7 @@ def locallowercase():
     return 0
 
 
-def isLocal(domain):
+def is_local(domain):
     """Return True if domain is "local", and False otherwise.
 
     See the courier(8) man page for more information on local domains.
@@ -231,45 +230,45 @@ def isLocal(domain):
     return 0
 
 
-def isHosteddomain(domain):
+def is_hosteddomain(domain):
     """Return True if domain is a hosted domain, and False otherwise.
 
     See the courier(8) man page for more information on hosted domains.
 
     """
     try:
-        hosteddomains = _openDbm('%s/hosteddomains.dat' % sysconfdir)
+        hosteddomains = _open_dbm('%s/hosteddomains.dat' % sysconfdir)
     except:
         return 0
     if domain in hosteddomains:
         return 1
     parts = domain.split('.')
     for x in range(1, len(parts)):
-        domainSub = '.' + '.'.join(parts[x:])
-        if domainSub in hosteddomains:
+        domain_sub = '.' + '.'.join(parts[x:])
+        if domain_sub in hosteddomains:
             return 1
     return 0
 
 
-def getAlias(address):
+def get_alias(address):
     """Return a list of addresses to which the address argument will expand.
 
     If no alias matches the address argument, None will be returned.
 
     """
     if '@' in address:
-        atIndex = address.index('@')
-        domain = address[atIndex + 1:]
-        if isLocal(domain):
-            address = '%s@%s' % (address[:atIndex], me())
+        at_index = address.index('@')
+        domain = address[at_index + 1:]
+        if is_local(domain):
+            address = '%s@%s' % (address[:at_index], me())
     else:
         address = '%s@%s' % (address, me())
     try:
-        aliases = _openDbm('%s/aliases.dat' % sysconfdir)
+        aliases = _open_dbm('%s/aliases.dat' % sysconfdir)
     except:
         return None
     if address in aliases:
-        return aliases[address].strip().split('\n')
+        return aliases[address].decode().strip().split('\n')
     return None
 
 
@@ -280,32 +279,32 @@ def smtpaccess(ip):
         ipsep = '.'
     elif ':' in ip:
         ipsep = ':'
-        ip = ipaddress.ip_address(unicode(ip)).exploded
+        ip = ipaddress.ip_address(ip).exploded
     else:
         sys.stderr.write('Couldn\'t break %s into parts\n' % ip)
         return None
     # Next, open the smtpaccess database for ip lookups
     try:
-        smtpdb = _openDbm(sysconfdir + '/smtpaccess.dat')
+        smtpdb = _open_dbm(sysconfdir + '/smtpaccess.dat')
     except:
         return None
     # Search for a match, most specific to least, and return the
     # first match.
     while ip:
         if ipsep == '.' and ip in smtpdb:
-            return smtpdb[ip]
+            return smtpdb[ip].decode()
         elif ipsep == ':' and (':' + ip) in smtpdb:
-            return smtpdb[':' + ip]
+            return smtpdb[':' + ip].decode()
         # if the ip doesn't match yet, strip off another part
         try:
             ri = ip.rindex(ipsep)
             ip = ip[:ri]
-        except:
+        except ValueError:
             # separator wasn't found, we don't need to search any more
             return None
 
 
-def getSmtpaccessVal(key, ip):
+def get_smtpaccess_val(key, ip):
     """Return a string from the smtpaccess database.
 
     The value returned will be None if the IP is not found in the
@@ -334,17 +333,16 @@ def getSmtpaccessVal(key, ip):
             return val
 
 
-def isRelayed(ip):
+def is_relayed(ip):
     """Return a true or false value indicating the RELAYCLIENT setting in
     the access db.
     """
-    if getSmtpaccessVal('RELAYCLIENT', ip) is None:
+    if get_smtpaccess_val('RELAYCLIENT', ip) is None:
         return 0
-    else:
-        return 1
+    return 1
 
 
-def isWhiteblocked(ip):
+def is_whiteblocked(ip):
     """Return a true or false value indicating the BLOCK setting in the
     access db.
 
@@ -354,13 +352,12 @@ def isWhiteblocked(ip):
     value will be false.
 
     """
-    if getSmtpaccessVal('BLOCK', ip) is '':
+    if get_smtpaccess_val('BLOCK', ip) == '':
         return 1
-    else:
-        return 0
+    return 0
 
 
-def getBlockVal(ip):
+def get_block_val(ip):
     """Return the value of the BLOCK setting in the access db.
 
     The value will either be None, '', or another string which will be
@@ -370,17 +367,17 @@ def getBlockVal(ip):
     whitelisted from blocks.
 
     """
-    return getSmtpaccessVal('BLOCK', ip)
+    return get_smtpaccess_val('BLOCK', ip)
 
 
-_standardConfigPaths = ['/etc/pythonfilter-modules.conf',
-                        '/usr/local/etc/pythonfilter-modules.conf']
-def getModuleConfig(moduleName):
+_standard_config_paths = ['/etc/pythonfilter-modules.conf',
+                          '/usr/local/etc/pythonfilter-modules.conf']
+def get_module_config(module_name):
     """Return a dictionary of config values.
 
     The function will attempt to parse "pythonfilter-modules.conf" in
     "/etc" and "/usr/local/etc", and load the values from the
-    section matching the moduleName argument.  If the configuration
+    section matching the module_name argument.  If the configuration
     files aren't found, or a name was requested that is not found in
     the config file, an empty dictionary will be returned.
 
@@ -390,15 +387,15 @@ def getModuleConfig(moduleName):
 
     """
     config = {}
-    cp = ConfigParser.RawConfigParser()
+    cp = configparser.RawConfigParser()
     cp.optionxform = str
     try:
-        cp.read(_standardConfigPaths)
-        ci = cp.items(moduleName)
-    except ConfigParser.NoSectionError:
+        cp.read(_standard_config_paths)
+        ci = cp.items(module_name)
+    except configparser.NoSectionError:
         ci = {}
-    except Exception, e:
-        sys.stderr.write('error parsing config module: %s, exception: %s\n' % (moduleName, str(e)))
+    except Exception as e:
+        sys.stderr.write('error parsing config module: %s, exception: %s\n' % (module_name, str(e)))
         ci = {}
     for i in ci:
         # eval the value of this item in a new environment to
@@ -409,18 +406,30 @@ def getModuleConfig(moduleName):
     return config
 
 
-def applyModuleConfig(moduleName, moduleNamespace):
-    """Modify moduleNamespace with values from configuration file.
+def apply_module_config(module_name, module_namespace):
+    """Modify module_namespace with values from configuration file.
 
     This function will load configuration files using the
-    getModuleConfig function, and will then add or replace any names
-    in moduleNamespace with the values from the configuration files.
+    get_module_config function, and will then add or replace any names
+    in module_namespace with the values from the configuration files.
 
     """
-    config = getModuleConfig(moduleName)
-    for i in config.keys():
-        moduleNamespace[i] = config[i]
+    config = get_module_config(module_name)
+    for i in config:
+        module_namespace[i] = config[i]
 
 
 # Call _setup to correct the module path values
 _setup()
+
+# Deprecated names preserved for compatibility with older releases
+isMinVersion = is_min_version
+getBlockVal = get_block_val
+isLocal = is_local
+isHosteddomain = is_hosteddomain
+getAlias = get_alias
+getSmtpaccessVal = get_smtpaccess_val
+isRelayed = is_relayed
+isWhiteblocked = is_whiteblocked
+getModuleConfig = get_module_config
+applyModuleConfig = apply_module_config

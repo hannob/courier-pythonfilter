@@ -104,7 +104,7 @@ Modules
 
 courier.config:
 
-isMinVersion(minVersion)
+is_min_version(minVersion)
     Check for minumum version of Courier.
 
     Return True if the version of courier currently installed is newer
@@ -135,12 +135,12 @@ dsnfrom()
 
     Call this function with no arguments.
 
-getAlias(address)
+get_alias(address)
     Return a list of addresses to which the address argument will expand.
 
     If no alias matches the address argument, None will be returned.
 
-getBlockVal(ip)
+get_block_val(ip)
     Return the value of the BLOCK setting in the access db.
 
     The value will either be None, '', or another string which will be
@@ -149,7 +149,7 @@ getBlockVal(ip)
     blocked.  The value '' indicates that the client is specifically
     whitelisted from blocks.
 
-getSmtpaccessVal(key, ip)
+get_smtpaccess_val(key, ip)
     Return a string from the smtpaccess database.
 
     The value returned will be None if the IP is not found in the
@@ -161,21 +161,21 @@ getSmtpaccessVal(key, ip)
 
     Otherwise, the value returned will be a string.
 
-isHosteddomain(domain)
+is_hosteddomain(domain)
     Return True if domain is a hosted domain, and False otherwise.
 
     See the courier(8) man page for more information on hosted domains.
 
-isLocal(domain)
+is_local(domain)
     Return True if domain is "local", and False otherwise.
 
     See the courier(8) man page for more information on local domains.
 
-isRelayed(ip)
+is_relayed(ip)
     Return a true or false value indicating the RELAYCLIENT setting in
     the access db.
 
-isWhiteblocked(ip)
+is_whiteblocked(ip)
     Return a true or false value indicating the BLOCK setting in the
     access db.
 
@@ -187,7 +187,7 @@ isWhiteblocked(ip)
 smtpaccess(ip)
     Return the courier smtpaccess value associated with the IP address.
 
-getModuleConfig(moduleName)
+get_module_config(moduleName)
     Return a dictionary of config values.
 
     The function will attempt to parse "pythonfilter-modules.conf" in
@@ -200,7 +200,7 @@ getModuleConfig(moduleName)
     eval(), so they must be valid python expressions.  They will be
     returned to the caller in their evaluated form.
 
-applyModuleConfig(moduleName, moduleNamespace)
+apply_module_config(moduleName, moduleNamespace)
     Modify moduleNamespace with values from configuration file.
 
     This function will load configuration files using the

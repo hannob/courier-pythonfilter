@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # pythonfilter -- A python framework for Courier global filters
 # Copyright (C) 2007-2008  Gordon Messmer <gordon@dragonsdawn.net>
 #
@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
-import anydbm
+import dbm
 import os
 import unittest
 import courier.config
@@ -26,8 +26,8 @@ import courier.config
 courier.config.sysconfdir = 'tmp/configfiles'
 
 
-def makedbm(name, replaceCommas=0):
-    dbm = anydbm.open('tmp/configfiles/%s.dat' % name, 'c')
+def makedbm(name, replace_commas=0):
+    newdbm = dbm.open('tmp/configfiles/%s.dat' % name, 'c')
     file = open('tmp/configfiles/%s' % name)
     line = file.readline()
     while line:
@@ -37,14 +37,13 @@ def makedbm(name, replaceCommas=0):
             value = '1'
         else:
             key, value = [x.strip() for x in parts]
-        if replaceCommas:
+        if replace_commas:
             value = value.replace(',', '\n') + '\n'
-        dbm[key] = value
+        newdbm[key] = value
         line = file.readline()
 
 
 class TestCourierConfig(unittest.TestCase):
-    
     def setUp(self):
         os.mkdir('tmp')
         os.system('cp -a configfiles tmp/configfiles')
@@ -71,11 +70,8 @@ class TestCourierConfig(unittest.TestCase):
         self.assertEqual(courier.config.locallowercase(),
                          True)
 
-    def testMe(self):
-        self.assertEqual(courier.config.me(),
-                         'ascension.private.dragonsdawn.net')
-
     def testIsLocal(self):
+        # Deprecated function test
         self.assertEqual(courier.config.isLocal('ascension.private.dragonsdawn.net'),
                          True)
         self.assertEqual(courier.config.isLocal('private.dragonsdawn.net'),
@@ -83,13 +79,29 @@ class TestCourierConfig(unittest.TestCase):
         self.assertEqual(courier.config.isLocal('herald.private.dragonsdawn.net'),
                          False)
 
+        # New function test
+        self.assertEqual(courier.config.is_local('ascension.private.dragonsdawn.net'),
+                         True)
+        self.assertEqual(courier.config.is_local('private.dragonsdawn.net'),
+                         True)
+        self.assertEqual(courier.config.is_local('herald.private.dragonsdawn.net'),
+                         False)
+
     def testIsHosteddomain(self):
+        # Deprecated function test
         self.assertEqual(courier.config.isHosteddomain('virtual.private.dragonsdawn.net'),
                          True)
         self.assertEqual(courier.config.isHosteddomain('ascension.private.dragonsdawn.net'),
                          False)
 
+        # New function test
+        self.assertEqual(courier.config.is_hosteddomain('virtual.private.dragonsdawn.net'),
+                         True)
+        self.assertEqual(courier.config.is_hosteddomain('ascension.private.dragonsdawn.net'),
+                         False)
+
     def testAliases(self):
+        # Deprecated function test
         self.assertEqual(courier.config.getAlias('alias1'),
                          ['gordon@ascension.private.dragonsdawn.net'])
         self.assertEqual(courier.config.getAlias('alias1@ascension.private.dragonsdawn.net'),
@@ -98,6 +110,17 @@ class TestCourierConfig(unittest.TestCase):
                          ['root@ascension.private.dragonsdawn.net',
                           'gordon@ascension.private.dragonsdawn.net'])
         self.assertEqual(courier.config.getAlias('alias3@virtual.private.dragonsdawn.net'),
+                         ['root@ascension.private.dragonsdawn.net'])
+
+        # New function test
+        self.assertEqual(courier.config.get_alias('alias1'),
+                         ['gordon@ascension.private.dragonsdawn.net'])
+        self.assertEqual(courier.config.get_alias('alias1@ascension.private.dragonsdawn.net'),
+                         ['gordon@ascension.private.dragonsdawn.net'])
+        self.assertEqual(courier.config.get_alias('alias2'),
+                         ['root@ascension.private.dragonsdawn.net',
+                          'gordon@ascension.private.dragonsdawn.net'])
+        self.assertEqual(courier.config.get_alias('alias3@virtual.private.dragonsdawn.net'),
                          ['root@ascension.private.dragonsdawn.net'])
 
     def testSmtpaccess(self):
@@ -111,6 +134,7 @@ class TestCourierConfig(unittest.TestCase):
                          None)
 
     def testGetSmtpaccessVal(self):
+        # Deprecated function test
         self.assertEqual(courier.config.getSmtpaccessVal('RELAYCLIENT', '127.0.0.1'),
                          '')
         self.assertEqual(courier.config.getSmtpaccessVal('BLOCK', '127.0.0.1'),
@@ -120,7 +144,18 @@ class TestCourierConfig(unittest.TestCase):
         self.assertEqual(courier.config.getSmtpaccessVal('BLOCK', '192.168.2.1'),
                          'shoo')
 
+        # New function test
+        self.assertEqual(courier.config.get_smtpaccess_val('RELAYCLIENT', '127.0.0.1'),
+                         '')
+        self.assertEqual(courier.config.get_smtpaccess_val('BLOCK', '127.0.0.1'),
+                         None)
+        self.assertEqual(courier.config.get_smtpaccess_val('RELAYCLIENT', '192.168.3.1'),
+                         None)
+        self.assertEqual(courier.config.get_smtpaccess_val('BLOCK', '192.168.2.1'),
+                         'shoo')
+
     def testIsRelayed(self):
+        # Deprecated function test
         self.assertEqual(courier.config.isRelayed('127.0.0.1'),
                          True)
         self.assertEqual(courier.config.isRelayed('192.168.1.1'),
@@ -128,7 +163,16 @@ class TestCourierConfig(unittest.TestCase):
         self.assertEqual(courier.config.isRelayed('192.168.3.1'),
                          False)
 
+        # New function test
+        self.assertEqual(courier.config.is_relayed('127.0.0.1'),
+                         True)
+        self.assertEqual(courier.config.is_relayed('192.168.1.1'),
+                         False)
+        self.assertEqual(courier.config.is_relayed('192.168.3.1'),
+                         False)
+
     def testIsWhiteblocked(self):
+        # Deprecated function test
         self.assertEqual(courier.config.isWhiteblocked('127.0.0.1'),
                          False)
         self.assertEqual(courier.config.isWhiteblocked('192.168.1.1'),
@@ -136,7 +180,16 @@ class TestCourierConfig(unittest.TestCase):
         self.assertEqual(courier.config.isWhiteblocked('192.168.3.1'),
                          False)
 
+        # New function test
+        self.assertEqual(courier.config.is_whiteblocked('127.0.0.1'),
+                         False)
+        self.assertEqual(courier.config.is_whiteblocked('192.168.1.1'),
+                         True)
+        self.assertEqual(courier.config.is_whiteblocked('192.168.3.1'),
+                         False)
+
     def testGetBlockVal(self):
+        # Deprecated function test
         self.assertEqual(courier.config.getBlockVal('127.0.0.1'),
                          None)
         self.assertEqual(courier.config.getBlockVal('192.168.1.1'),
@@ -144,6 +197,16 @@ class TestCourierConfig(unittest.TestCase):
         self.assertEqual(courier.config.getBlockVal('192.168.2.1'),
                          'shoo')
         self.assertEqual(courier.config.getBlockVal('192.168.3.1'),
+                         None)
+
+        # New function test
+        self.assertEqual(courier.config.get_block_val('127.0.0.1'),
+                         None)
+        self.assertEqual(courier.config.get_block_val('192.168.1.1'),
+                         '')
+        self.assertEqual(courier.config.get_block_val('192.168.2.1'),
+                         'shoo')
+        self.assertEqual(courier.config.get_block_val('192.168.3.1'),
                          None)
 
 
