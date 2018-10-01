@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # courier.authdaemon -- python module for Courier's authdaemon
 # Copyright (C) 2007-2008  Gordon Messmer <gordon@dragonsdawn.net>
 #

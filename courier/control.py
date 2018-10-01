@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # courier.control -- python module for handling Courier message control files
 # Copyright (C) 2003-2008  Gordon Messmer <gordon@dragonsdawn.net>
 #

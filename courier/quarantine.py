@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # courier.quarantine -- python module for quarantining and releasing messages
 # Copyright (C) 2008  Gordon Messmer <gordon@dragonsdawn.net>
 #

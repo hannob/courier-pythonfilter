@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # courier.xfilter -- python module for modifying messages in the queue
 # Copyright (C) 2006-2008  Gordon Messmer <gordon@dragonsdawn.net>
 #

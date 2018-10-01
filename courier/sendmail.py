@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # courier.sendmail -- python module for sending messages using Courier
 # Copyright (C) 2016  Gordon Messmer <gordon@dragonsdawn.net>
 #

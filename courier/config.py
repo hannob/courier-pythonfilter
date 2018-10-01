@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # courier.config -- python module for Courier configuration access
 # Copyright (C) 2003-2008  Gordon Messmer <gordon@dragonsdawn.net>
 #
