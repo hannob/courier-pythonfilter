@@ -163,12 +163,28 @@ def get_control_data(control_files):
     's': The envelope sender
     'f': The "Received-From-MTA" record
     'e': The envid of this message, as specified in RFC1891, or None
+    'M': The "message id" of this message
+    'i': The name used to authenticate the sender, or None
     't': Either 'F' or 'H', specifying FULL or HDRS in the RET parameter
          that was given in the MAIL FROM command, as specified in RFC1891,
          or None
-    'V': 1 if the envelope sender address should be VERPed, 0 otherwise
+    'E': Expiration time of this message, in seconds as returned by the
+         time() system call
+    'p': Expiration time of this message, for the fax module
+    'W': Time at which sender will be warned if the message is still
+         undeliverable
+    'w': True if a warning has already been sent, False otherwise
+    '8': True if the message contains 8-bit data, False otherwise
+    'm': True if the message contains 8-bit headers, False otherwise
+    'V': True if the envelope sender address should be VERPed, False
+         otherwise
+    'v': vhost argument given to submit, or the domain of the auth user,
+         or None
+    'X': The reason for canceling the message if it has been cancelled,
+         or None
     'U': The security level requested for the message
     'u': The "message source" given on submit's command line
+    'T': True if backscatter should be suppressed, False otherwise
     'r': The list of recipients, as returned by get_recipients_data
 
     See courier/libs/comctlfile.h in the Courier source code, and the
@@ -178,29 +194,30 @@ def get_control_data(control_files):
     data = {'s': '',
             'f': '',
             'e': None,
+            'M': None,
+            'i': None,
             't': None,
-            'V': None,
+            'E': None,
+            'p': None,
+            'W': None,
+            'w': False,
+            '8': False,
+            'm': False,
+            'V': False,
+            'v': None,
+            'X': None,
             'U': '',
             'u': None,
+            'T': False,
             'r': []}
     for cf in control_files:
         cfo = open(cf)
         ctl_line = cfo.readline()
         while ctl_line:
-            if ctl_line[0] == 's':
-                data['s'] = ctl_line[1:].strip()
-            if ctl_line[0] == 'f':
-                data['f'] = ctl_line[1:].strip()
-            if ctl_line[0] == 'e':
-                data['e'] = ctl_line[1:].strip()
-            if ctl_line[0] == 't':
-                data['t'] = ctl_line[1:].strip()
-            if ctl_line[0] == 'V':
-                data['V'] = 'V'
-            if ctl_line[0] == 'U':
-                data['U'] = ctl_line[1:].strip()
-            if ctl_line[0] == 'u':
-                data['u'] = ctl_line[1:].strip()
+            if ctl_line[0] in 'sfeMitepWvXUu':
+                data[ctl_line[0]] = ctl_line[1:].strip()
+            if ctl_line[0] in 'w8mVT':
+                data[ctl_line[0]] = True
             ctl_line = cfo.readline()
     data['r'] = get_recipients_data(control_files)
     return data
