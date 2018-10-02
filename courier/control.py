@@ -214,7 +214,7 @@ def get_control_data(control_files):
         cfo = open(cf)
         ctl_line = cfo.readline()
         while ctl_line:
-            if ctl_line[0] in 'sfeMitepWvXUu':
+            if ctl_line[0] in 'sfeMitEpWvXUu':
                 data[ctl_line[0]] = ctl_line[1:].strip()
             if ctl_line[0] in 'w8mVT':
                 data[ctl_line[0]] = True
