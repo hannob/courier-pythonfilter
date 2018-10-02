@@ -104,7 +104,7 @@ Modules
 
 courier.config:
 
-is_min_version(minVersion)
+is_min_version(min_version)
     Check for minumum version of Courier.
 
     Return True if the version of courier currently installed is newer
@@ -187,12 +187,12 @@ is_whiteblocked(ip)
 smtpaccess(ip)
     Return the courier smtpaccess value associated with the IP address.
 
-get_module_config(moduleName)
+get_module_config(module_name)
     Return a dictionary of config values.
 
     The function will attempt to parse "pythonfilter-modules.conf" in
     "/etc" and "/usr/local/etc", and load the values from the
-    section matching the moduleName argument.  If the configuration
+    section matching the module_name argument.  If the configuration
     files aren't found, or a name was requested that is not found in
     the config file, an empty dictionary will be returned.
 
@@ -200,57 +200,57 @@ get_module_config(moduleName)
     eval(), so they must be valid python expressions.  They will be
     returned to the caller in their evaluated form.
 
-apply_module_config(moduleName, moduleNamespace)
-    Modify moduleNamespace with values from configuration file.
+apply_module_config(module_name, module_namespace)
+    Modify module_namespace with values from configuration file.
 
     This function will load configuration files using the
-    getModuleConfig function, and will then add or replace any names
-    in moduleNamespace with the values from the configuration files.
+    get_module_config function, and will then add or replace any names
+    in module_namespace with the values from the configuration files.
 
 
 courier.control:
 
-addRecipient(controlFileList, recipient)
-    Add a recipient to a controlFileList set.
+add_recipient(control_files, recipient)
+    Add a recipient to a control_files set.
 
     The recipient argument must contain a canonical address.  Local
     aliases are not allowed.
 
-addRecipientData(controlFileList, recipientData)
-    Add a recipient to a controlFileList set.
+add_recipient_data(control_files, recipient_data)
+    Add a recipient to a control_files set.
 
-    The recipientData argument must contain the same information that
-    is normally returned by the getRecipientsData function for each
+    The recipient_data argument must contain the same information that
+    is normally returned by the get_recipients_data function for each
     recipient.  Recipients should be added one at a time.
 
-delRecipient(controlFileList, recipient)
+del_recipient(control_files, recipient)
     Remove a recipient from the list.
 
     The recipient arg is a canonical address found in one of the
-    control files in controlFileList.
+    control files in control_files.
 
-    The first recipient in the controlFileList that exactly matches
+    The first recipient in the control_files that exactly matches
     the address given will be removed by way of marking that delivery
     complete, successfully.
 
     You should log all such removals so that messages are never
     silently lost.
 
-delRecipientData(controlFileList, recipientData)
+del_recipient_data(control_files, recipient_data)
     Remove a recipient from the list.
 
-    The recipientData arg is a list similar to the data returned by
-    getRecipientsData found in one of the control files in
-    controlFileList.
+    The recipient_data arg is a list similar to the data returned by
+    get_recipients_data found in one of the control files in
+    control_files.
 
-    The first recipient in the controlFileList that exactly matches
+    The first recipient in the control_files that exactly matches
     the data given will be removed by way of marking that delivery
     complete, successfully.
 
     You should log all such removals so that messages are never
     silently lost.
 
-getControlData(controlFileList)
+get_control_data(control_files)
     Return a dictionary containing all of the data that was given to submit.
 
     The dictionary will have the following elements:
@@ -263,29 +263,29 @@ getControlData(controlFileList)
     'V': 1 if the envelope sender address should be VERPed, 0 otherwise
     'U': The security level requested for the message
     'u': The "message source" given on submit's command line
-    'r': The list of recipients, as returned by getRecipientsData
+    'r': The list of recipients, as returned by get_recipients_data
 
     See courier/libs/comctlfile.h in the Courier source code, and the
     submit(8) man page for more information.
 
-getLines(controlFileList, key, [maxLines])
-    Return a list of values in the controlFileList matching key.
+get_lines(control_files, key, [max_lines])
+    Return a list of values in the control_files matching key.
 
     "key" should be a one character string.  See the "Control Records"
     section of Courier's Mail Queue documentation for a list of valid
     control record keys.
 
-    If the "maxLines" argument is given, it must be a number greater
+    If the "max_lines" argument is given, it must be a number greater
     than zero.  No more values than indicated by this argument will
     be returned.
 
-getRecipients(controlFileList)
+get_recipients(control_files)
     Return a list of message recipients.
 
     This list contains addresses in canonical format, after Courier's
     address rewriting and alias expansion.
 
-getRecipientsData(controlFileList)
+get_recipients_data(control_files)
     Return a list of lists with details about message recipients.
 
     Each list in the list returned will have the following elements:
@@ -293,33 +293,33 @@ getRecipientsData(controlFileList)
     1: The "original message recipient", as defined by RFC1891
     2: Zero or more characters indicating DSN behavior.
 
-getSender(controlFileList)
+get_sender(control_files)
     Return the envelope sender.
 
-getSendersIP(controlFileList)
+get_senders_ip(control_files)
     Return an IP address if one is found in the "Received-From-MTA" record.
 
-getSendersMta(controlFileList)
+get_senders_mta(control_files)
     Return the "Received-From-MTA" record.
 
     Courier's documentation indicates that this specifies what goes
     into this header for DSNs generated due to this message.
 
-getAuthUser(controlFileList, bodyFile=None)
+get_auth_user(control_files, body_file=None)
     Return the username used during SMTP AUTH, if available.
 
     The return value with be a string containing the username used
     for authentication during submission of the message, or None,
     if authentication was not used.
 
-    The arguments are requested with controlFileList first in order
+    The arguments are requested with control_files first in order
     to be more consistent with other functions in this module.
     Courier currently stores auth info only in the message header,
-    so bodyFile will be examined for that information.  Should that
-    ever change, and controlFileList contain the auth info, older
+    so body_file will be examined for that information.  Should that
+    ever change, and control_files contain the auth info, older
     filters will not break due to changes in this interface.  Filters
     written after such a change in Courier will be able to omit the
-    bodyFile argument.
+    body_file argument.
 
 
 courier.xfilter:

@@ -16,89 +16,87 @@
 # You should have received a copy of the GNU General Public License
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
-import config
 import ipaddress
 import re
 import string
 import time
 
+from . import config
 
-def getLines(controlFileList, key, maxLines=0):
-    """Return a list of values in the controlFileList matching key.
+
+def get_lines(control_files, key, max_lines=0):
+    """Return a list of values in the control_files matching key.
 
     "key" should be a one character string.  See the "Control Records"
     section of Courier's Mail Queue documentation for a list of valid
     control record keys.
 
-    If the "maxLines" argument is given, it must be a number greater
+    If the "max_lines" argument is given, it must be a number greater
     than zero.  No more values than indicated by this argument will
     be returned.
 
     """
     lines = []
-    for cf in controlFileList:
+    for cf in control_files:
         cfo = open(cf)
-        ctlLine = cfo.readline()
-        while ctlLine:
-            if ctlLine[0] == key:
-                lines.append(ctlLine[1:].strip())
-                if maxLines and len(lines) == maxLines:
+        ctl_line = cfo.readline()
+        while ctl_line:
+            if ctl_line[0] == key:
+                lines.append(ctl_line[1:].strip())
+                if max_lines and len(lines) == max_lines:
                     break
-            ctlLine = cfo.readline()
-        if maxLines and len(lines) == maxLines:
+            ctl_line = cfo.readline()
+        if max_lines and len(lines) == max_lines:
             break
     return lines
 
 
-def getSendersMta(controlFileList):
+def get_senders_mta(control_files):
     """Return the "Received-From-MTA" record.
 
     Courier's documentation indicates that this specifies what goes
     into this header for DSNs generated due to this message.
 
     """
-    senderLines = getLines(controlFileList, 'f', 1)
-    if senderLines:
-        return senderLines[0]
-    else:
-        return None
+    sender_lines = get_lines(control_files, 'f', 1)
+    if sender_lines:
+        return sender_lines[0]
+    return None
 
 
-def getSendersIP(controlFileList):
+def get_senders_ip(control_files):
     """Return an IP address if one is found in the "Received-From-MTA" record."""
-    sender = getSendersMta(controlFileList)
+    sender = get_senders_mta(control_files)
     if not sender:
         return None
     ipstr = sender.partition('[')[2].partition(']')[0]
     if not ipstr:
         return None
-    sender_ip = ipaddress.ip_address(unicode(ipstr))
-    if type(sender_ip) is ipaddress.IPv6Address and sender_ip.ipv4_mapped:
+    sender_ip = ipaddress.ip_address(ipstr)
+    if isinstance(sender_ip, ipaddress.IPv6Address) and sender_ip.ipv4_mapped:
         return str(sender_ip.ipv4_mapped)
-    else:
-        return str(sender_ip)
+    return str(sender_ip)
 
 
-def getSender(controlFileList):
+def get_sender(control_files):
     """Return the envelope sender."""
-    senderLines = getLines(controlFileList, 's', 1)
-    if senderLines:
-        return senderLines[0]
-    else:
-        return None
+    sender_lines = get_lines(control_files, 's', 1)
+    if sender_lines:
+        return sender_lines[0]
+    return None
 
 
-def getRecipients(controlFileList):
+def get_recipients(control_files):
     """Return a list of message recipients.
 
     This list contains addresses in canonical format, after Courier's
     address rewriting and alias expansion.
 
     """
-    return [x[0] for x in getRecipientsData(controlFileList)]
+    return [x[0] for x in get_recipients_data(control_files)]
 
 
-def getRecipientsData(controlFileList):
+def get_recipients_data(control_files):
     """Return a list of lists with details about message recipients.
 
     Each list in the list returned will have the following elements:
@@ -107,16 +105,16 @@ def getRecipientsData(controlFileList):
     2: Zero or more characters indicating DSN behavior.
 
     """
-    recipientsData = []
-    for cf in controlFileList:
-        rcpts = _getRecipientsFromFile(cf)
+    recipients_data = []
+    for cf in control_files:
+        rcpts = _get_recipients_from_file(cf)
         for x in rcpts:
             if x[1] is False:
-                recipientsData.append(x[2])
-    return recipientsData
+                recipients_data.append(x[2])
+    return recipients_data
 
 
-def _getRecipientsFromFile(controlFile):
+def _get_recipients_from_file(control_file):
     """Return a list of lists with details about message recipients.
 
     Each list in the list returned will have the following elements:
@@ -134,31 +132,31 @@ def _getRecipientsFromFile(controlFile):
             x = [len(recipients), False, r]
             recipients.append(x)
 
-    cfo = open(controlFile)
+    cfo = open(control_file)
     recipients = []
     r = ['', '', ''] # This list will contain the recipient data.
-    ctlLine = cfo.readline()
-    while ctlLine:
-        if ctlLine[0] == 'r':
-            r[0] = ctlLine[1:].strip()
-        if ctlLine[0] == 'R':
-            r[1] = ctlLine[1:].strip()
-        if ctlLine[0] == 'N':
-            r[2] = ctlLine[1:].strip()
+    ctl_line = cfo.readline()
+    while ctl_line:
+        if ctl_line[0] == 'r':
+            r[0] = ctl_line[1:].strip()
+        if ctl_line[0] == 'R':
+            r[1] = ctl_line[1:].strip()
+        if ctl_line[0] == 'N':
+            r[2] = ctl_line[1:].strip()
             # This completes a new record, add it to the recipient data list.
             _addr(recipients, r)
             r = ['', '', '']
-        if ctlLine[0] == 'S' or ctlLine[0] == 'F':
+        if ctl_line[0] == 'S' or ctl_line[0] == 'F':
             # Control file records either a successful or failed
             # delivery.  Either way, mark this recipient completed.
-            rnum = ctlLine.split(' ', 1)[0]
+            rnum = ctl_line.split(' ', 1)[0]
             rnum = int(rnum[1:])
             recipients[rnum][1] = True
-        ctlLine = cfo.readline()
+        ctl_line = cfo.readline()
     return recipients
 
 
-def getControlData(controlFileList):
+def get_control_data(control_files):
     """Return a dictionary containing all of the data that was given to submit.
 
     The dictionary will have the following elements:
@@ -171,7 +169,7 @@ def getControlData(controlFileList):
     'V': 1 if the envelope sender address should be VERPed, 0 otherwise
     'U': The security level requested for the message
     'u': The "message source" given on submit's command line
-    'r': The list of recipients, as returned by getRecipientsData
+    'r': The list of recipients, as returned by get_recipients_data
 
     See courier/libs/comctlfile.h in the Courier source code, and the
     submit(8) man page for more information.
@@ -185,45 +183,45 @@ def getControlData(controlFileList):
             'U': '',
             'u': None,
             'r': []}
-    for cf in controlFileList:
+    for cf in control_files:
         cfo = open(cf)
-        ctlLine = cfo.readline()
-        while ctlLine:
-            if ctlLine[0] == 's':
-                data['s'] = ctlLine[1:].strip()
-            if ctlLine[0] == 'f':
-                data['f'] = ctlLine[1:].strip()
-            if ctlLine[0] == 'e':
-                data['e'] = ctlLine[1:].strip()
-            if ctlLine[0] == 't':
-                data['t'] = ctlLine[1:].strip()
-            if ctlLine[0] == 'V':
+        ctl_line = cfo.readline()
+        while ctl_line:
+            if ctl_line[0] == 's':
+                data['s'] = ctl_line[1:].strip()
+            if ctl_line[0] == 'f':
+                data['f'] = ctl_line[1:].strip()
+            if ctl_line[0] == 'e':
+                data['e'] = ctl_line[1:].strip()
+            if ctl_line[0] == 't':
+                data['t'] = ctl_line[1:].strip()
+            if ctl_line[0] == 'V':
                 data['V'] = 'V'
-            if ctlLine[0] == 'U':
-                data['U'] = ctlLine[1:].strip()
-            if ctlLine[0] == 'u':
-                data['u'] = ctlLine[1:].strip()
-            ctlLine = cfo.readline()
-    data['r'] = getRecipientsData(controlFileList)
+            if ctl_line[0] == 'U':
+                data['U'] = ctl_line[1:].strip()
+            if ctl_line[0] == 'u':
+                data['u'] = ctl_line[1:].strip()
+            ctl_line = cfo.readline()
+    data['r'] = get_recipients_data(control_files)
     return data
 
 
-def addRecipient(controlFileList, recipient):
-    """Add a recipient to a controlFileList set.
+def add_recipient(control_files, recipient):
+    """Add a recipient to a control_files set.
 
     The recipient argument must contain a canonical address.  Local
     aliases are not allowed.
 
     """
-    recipientData = [recipient, '', '']
-    addRecipientData(controlFileList, recipientData)
+    recipient_data = [recipient, '', '']
+    add_recipient_data(control_files, recipient_data)
 
 
-def addRecipientData(controlFileList, recipientData):
-    """Add a recipient to a controlFileList set.
+def add_recipient_data(control_files, recipient_data):
+    """Add a recipient to a control_files set.
 
-    The recipientData argument must contain the same information that
-    is normally returned by the getRecipientsData function for each
+    The recipient_data argument must contain the same information that
+    is normally returned by the get_recipients_data function for each
     recipient.  Recipients should be added one at a time.
 
     """
@@ -232,32 +230,32 @@ def addRecipientData(controlFileList, recipientData):
     # recipient to the last control file, but it would be more
     # robust to check the number of recipients in it first and
     # create a new file if necessary.
-    if len(recipientData) != 3:
-        raise ValueError('recipientData must be a list of 3 values.')
-    cf = controlFileList[-1]
+    if len(recipient_data) != 3:
+        raise ValueError('recipient_data must be a list of 3 values.')
+    cf = control_files[-1]
     cfo = open(cf, 'a')
-    cfo.write('r%s\n' % recipientData[0])
-    cfo.write('R%s\n' % recipientData[1])
-    cfo.write('N%s\n' % recipientData[2])
+    cfo.write('r%s\n' % recipient_data[0])
+    cfo.write('R%s\n' % recipient_data[1])
+    cfo.write('N%s\n' % recipient_data[2])
     cfo.close()
 
 
-def _markComplete(controlFile, recipientIndex):
+def _mark_complete(control_file, recipient_index):
     """Mark a single recipient's delivery as completed."""
-    cfo = open(controlFile, 'a')
+    cfo = open(control_file, 'a')
     cfo.seek(0, 2) # Seek to the end of the file
     cfo.write('I%d R 250 Ok - Removed by courier.control.py\n' %
-              recipientIndex)
-    cfo.write('S%d %d\n' % (recipientIndex, int(time.time())))
+              recipient_index)
+    cfo.write('S%d %d\n' % (recipient_index, int(time.time())))
 
 
-def delRecipient(controlFileList, recipient):
+def del_recipient(control_files, recipient):
     """Remove a recipient from the list.
 
     The recipient arg is a canonical address found in one of the
-    control files in controlFileList.
+    control files in control_files.
 
-    The first recipient in the controlFileList that exactly matches
+    The first recipient in the control_files that exactly matches
     the address given will be removed by way of marking that delivery
     complete, successfully.
 
@@ -265,23 +263,23 @@ def delRecipient(controlFileList, recipient):
     silently lost.
 
     """
-    for cf in controlFileList:
-        rcpts = _getRecipientsFromFile(cf)
+    for cf in control_files:
+        rcpts = _get_recipients_from_file(cf)
         for x in rcpts:
             if(x[1] is False # Delivery is not complete for this recipient
                and x[2][0] == recipient):
-                _markComplete(cf, x[0])
+                _mark_complete(cf, x[0])
                 return
 
 
-def delRecipientData(controlFileList, recipientData):
+def del_recipient_data(control_files, recipient_data):
     """Remove a recipient from the list.
 
-    The recipientData arg is a list similar to the data returned by
-    getRecipientsData found in one of the control files in
-    controlFileList.
+    The recipient_data arg is a list similar to the data returned by
+    get_recipients_data found in one of the control files in
+    control_files.
 
-    The first recipient in the controlFileList that exactly matches
+    The first recipient in the control_files that exactly matches
     the data given will be removed by way of marking that delivery
     complete, successfully.
 
@@ -289,20 +287,20 @@ def delRecipientData(controlFileList, recipientData):
     silently lost.
 
     """
-    if len(recipientData) != 3:
-        raise ValueError('recipientData must be a list of 3 values.')
-    for cf in controlFileList:
-        rcpts = _getRecipientsFromFile(cf)
+    if len(recipient_data) != 3:
+        raise ValueError('recipient_data must be a list of 3 values.')
+    for cf in control_files:
+        rcpts = _get_recipients_from_file(cf)
         for x in rcpts:
             if(x[1] is False # Delivery is not complete for this recipient
-               and x[2] == recipientData):
-                _markComplete(cf, x[0])
+               and x[2] == recipient_data):
+                _mark_complete(cf, x[0])
                 return
 
 
 _hostname = config.me()
 _auth_regex = re.compile(r'\((?:IDENT: [^,]*, )?AUTH: \S+ ([^,)]*)(?:, [^)]*)?\)\s*by %s' % _hostname)
-def _checkHeader(header):
+def _check_header(header):
     """Search header for _auth_regex.
 
     If the header is not a "Received" header, return None to indicate
@@ -321,37 +319,36 @@ def _checkHeader(header):
     found = _auth_regex.search(header)
     if found:
         return found.group(1)
-    else:
-        return 0
+    return 0
 
 
-def getAuthUser(controlFileList, bodyFile=None):
+def get_auth_user(control_files, body_file=None):
     """Return the username used during SMTP AUTH, if available.
 
     The return value with be a string containing the username used
     for authentication during submission of the message, or None,
     if authentication was not used.
 
-    The arguments are requested with controlFileList first in order
+    The arguments are requested with control_files first in order
     to be more consistent with other functions in this module.
     Courier currently stores auth info only in the message header,
-    so bodyFile will be examined for that information.  Should that
-    ever change, and controlFileList contain the auth info, older
+    so body_file will be examined for that information.  Should that
+    ever change, and control_files contain the auth info, older
     filters will not break due to changes in this interface.  Filters
     written after such a change in Courier will be able to omit the
-    bodyFile argument.
+    body_file argument.
 
     """
     try:
-        bfStream = open(bodyFile)
-    except:
+        bf_stream = open(body_file)
+    except OSError:
         return None
-    header = bfStream.readline()
+    header = bf_stream.readline()
     while 1:
-        bf_line = bfStream.readline()
+        bf_line = bf_stream.readline()
         if bf_line == '\n' or bf_line == '':
             # There are no more headers.  Scan the header we've got and quit.
-            auth = _checkHeader(header)
+            auth = _check_header(header)
             break
         if bf_line[0] in string.whitespace:
             # This is a continuation line.  Add bf_line to header and loop.
@@ -359,13 +356,25 @@ def getAuthUser(controlFileList, bodyFile=None):
         else:
             # This line begins a new header.  Check the previous header and
             # replace it before looping.
-            auth = _checkHeader(header)
+            auth = _check_header(header)
             if auth is not None:
                 break
             else:
                 header = bf_line
     if auth:
         return auth
-    else:
-        return None
+    return None
 
+# Deprecated names preserved for compatibility with older releases
+getLines = get_lines
+getSendersMta = get_senders_mta
+getSendersIP = get_senders_ip
+getSender = get_sender
+getRecipients = get_recipients
+getRecipientsData = get_recipients_data
+getControlData = get_control_data
+addRecipient = add_recipient
+addRecipientData = add_recipient_data
+delRecipient = del_recipient
+delRecipientData = del_recipient_data
+getAuthUser = get_auth_user
