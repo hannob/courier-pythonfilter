@@ -315,30 +315,6 @@ def del_recipient_data(control_files, recipient_data):
                 return
 
 
-_hostname = config.me()
-_auth_regex = re.compile(r'\((?:IDENT: [^,]*, )?AUTH: \S+ ([^,)]*)(?:, [^)]*)?\)\s*by %s' % _hostname)
-def _check_header(header):
-    """Search header for _auth_regex.
-
-    If the header is not a "Received" header, return None to indicate
-    that scanning should continue.
-
-    If the header is a "Received" header and does not match the regex,
-    return 0 to indicate that the filter should stop processing
-    headers.
-
-    If the header is a "Received" header and matches the regex, return
-    the username used during authentication.
-
-    """
-    if header[:9] != 'Received:':
-        return None
-    found = _auth_regex.search(header)
-    if found:
-        return found.group(1)
-    return 0
-
-
 def get_auth_user(control_files, body_file=None):
     """Return the username used during SMTP AUTH, if available.
 
@@ -346,40 +322,13 @@ def get_auth_user(control_files, body_file=None):
     for authentication during submission of the message, or None,
     if authentication was not used.
 
-    The arguments are requested with control_files first in order
-    to be more consistent with other functions in this module.
-    Courier currently stores auth info only in the message header,
-    so body_file will be examined for that information.  Should that
-    ever change, and control_files contain the auth info, older
-    filters will not break due to changes in this interface.  Filters
-    written after such a change in Courier will be able to omit the
-    body_file argument.
+    The body_file argument is not needed.  It is accepted for
+    compatibility with older releases of pythonfilter.
 
     """
-    try:
-        bf_stream = open(body_file)
-    except OSError:
-        return None
-    header = bf_stream.readline()
-    while 1:
-        bf_line = bf_stream.readline()
-        if bf_line == '\n' or bf_line == '':
-            # There are no more headers.  Scan the header we've got and quit.
-            auth = _check_header(header)
-            break
-        if bf_line[0] in string.whitespace:
-            # This is a continuation line.  Add bf_line to header and loop.
-            header += bf_line
-        else:
-            # This line begins a new header.  Check the previous header and
-            # replace it before looping.
-            auth = _check_header(header)
-            if auth is not None:
-                break
-            else:
-                header = bf_line
-    if auth:
-        return auth
+    auth_lines = get_lines(control_files, 'i', 1)
+    if auth_lines:
+        return auth_lines[0]
     return None
 
 # Deprecated names preserved for compatibility with older releases
