@@ -28,20 +28,20 @@ quarantine = os.path.join(courier.config.localstatedir, 'quarantine')
 
 
 def usage():
-    print '''Use: dropmsg [-a authentication] [-i IP address] [-s email address]
+    print('''Use: dropmsg [-a authentication] [-i IP address] [-s email address]
     The local system's queue will be walked.  Messages matching any given criteria will
     be moved to a quarantine (%s).  At least one argument is required.
     -a: Messages queued using the given username
     -i: Messages queued from the given IP address
-    -s: Messages with the given envelope sender's address or DSNs to that address''' % quarantine
+    -s: Messages with the given envelope sender's address or DSNs to that address''' % quarantine)
 
 
 
 def drop(cf, df):
     qcf = os.path.join(quarantine, os.path.basename(cf))
     qdf = os.path.join(quarantine, os.path.basename(df))
-    os.rename(cf,qcf)
-    os.rename(df,qdf)
+    os.rename(cf, qcf)
+    os.rename(df, qdf)
 
 
 def search(auth, ip, sender):
@@ -72,21 +72,21 @@ def search(auth, ip, sender):
                         drop(cf, df)
 
 
-if __name__ == '__main__':
+def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'a:i:s:')
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         # print help information and exit:
-        print str(err)
+        print(str(err))
         usage()
         sys.exit(2)
     if not opts:
         usage()
         sys.exit(2)
 
-    auth=[]
-    ip=[]
-    sender=[]
+    auth = []
+    ip = []
+    sender = []
 
     for o, a in opts:
         if o == '-a':
@@ -97,3 +97,6 @@ if __name__ == '__main__':
             sender.append(a)
 
     search(auth, ip, sender)
+
+if __name__ == '__main__':
+    main()
