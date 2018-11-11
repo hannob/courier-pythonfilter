@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
-import anydbm
+import dbm
 import datetime
 import email
 import fcntl
 import os
 import time
-import cPickle as pickle
+import pickle
 import courier.config
 import courier.control
 import courier.sendmail
@@ -43,30 +43,30 @@ def init():
         config = courier.config.getModuleConfig('Quarantine')
 
 
-def _getDb():
+def _get_db():
     """Return the dbm and lock file handles."""
     dbmfile = '%s/msgs.db' % config['dir']
     lockfile = '%s/msgs.lock' % config['dir']
     lock = open(lockfile, 'w')
     fcntl.flock(lock, fcntl.LOCK_EX)
-    dbm = anydbm.open(dbmfile, 'c')
-    return(dbm, lock)
+    dbm_stream = dbm.open(dbmfile, 'c')
+    return(dbm_stream, lock)
 
 
-def _closeDb(dbm, lock):
+def _close_db(dbm_stream, lock):
     """Unlock and close the lock and dbm files"""
     fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
     lock.close()
-    dbm.close()
+    dbm_stream.close()
 
 
-def _copyFile(source, destination):
+def _copy_file(source, destination):
     dfile = open(destination, 'w')
     sfile = open(source, 'r')
     dfile.write(sfile.read())
 
 
-def sendNotice(message, address, sender=None):
+def send_notice(message, address, sender=None):
     if not sender:
         sender = 'postmaster@%s' % courier.config.me()
     msg = ('From: Mail Quarantine System <%s>\r\n'
@@ -86,45 +86,45 @@ def sendNotice(message, address, sender=None):
         courier.sendmail.sendmail('', rcpts, msg)
 
 
-def sendFailureNotice(requestedId, address):
+def send_failure_notice(requested_id, address):
     message = """The quarantine system received a request from your address
 to release the message with id '%s' from the quarantine.  That message
 was not found.  It may have already expired.
 
 I'm sorry that it didn't work out.  Please contact your system admin
 for further assistance.
-""" % requestedId
-    sendNotice(message, address)
+""" % requested_id
+    send_notice(message, address)
 
 
-def quarantine(bodyFile, controlFileList, explanation):
+def quarantine(body_file, control_files, explanation):
     # Generate an ID for this quarantined message.  The ID will consist
     # of the inode number for the body file.  The inode number from the
     # original body file will be used for the temporary file's name.
-    obodyinfo = os.stat(bodyFile)
+    obodyinfo = os.stat(body_file)
     bodypath = '%s/tmp.%s' % (config['dir'], obodyinfo.st_ino)
     body = open(bodypath, 'w')
     bodyinfo = os.fstat(body.fileno())
     body.close()
     msgid = bodyinfo.st_ino
     # Copy files to quarantine
-    quarantinePaths = ('%s/D%s' % (config['dir'], msgid), [])
-    os.rename(bodypath, quarantinePaths[0])
-    ctlFileExt = ''
-    ctlFileNum = 0
-    _copyFile(bodyFile, quarantinePaths[0])
-    for x in controlFileList:
-        ctlFilePath = '%s/C%s%s' % (config['dir'], msgid, ctlFileExt)
-        ctlFileNum += 1
-        ctlFileExt = '.%s' % ctlFileNum
-        _copyFile(x, ctlFilePath)
-        quarantinePaths[1].append(ctlFilePath)
+    quarantine_paths = ('%s/D%s' % (config['dir'], msgid), [])
+    os.rename(bodypath, quarantine_paths[0])
+    ctl_file_ext = ''
+    ctl_file_num = 0
+    _copy_file(body_file, quarantine_paths[0])
+    for x in control_files:
+        ctl_file_path = '%s/C%s%s' % (config['dir'], msgid, ctl_file_ext)
+        ctl_file_num += 1
+        ctl_file_ext = '.%s' % ctl_file_num
+        _copy_file(x, ctl_file_path)
+        quarantine_paths[1].append(ctl_file_path)
     # Open and lock the quarantine DB
-    (dbm, lock) = _getDb()
+    (dbm_stream, lock) = _get_db()
     # Record this set of files in the DB
-    dbm['%d' % msgid] = pickle.dumps((time.time(), quarantinePaths))
+    dbm_stream['%d' % msgid] = pickle.dumps((time.time(), quarantine_paths))
     # Unlock the DB
-    _closeDb(dbm, lock)
+    _close_db(dbm_stream, lock)
     # Prepare notice for recipients of quarantined message
     # Some sites would prefer that only admins release messages from the
     # quarantine.
@@ -132,25 +132,25 @@ def quarantine(bodyFile, controlFileList, explanation):
        and config['userRelease'] == 0
        and 'alsoNotify' in config
        and config['alsoNotify']):
-        release = config['alsoNotify']
+        release_addr = config['alsoNotify']
     else:
-        release = 'quarantine-%s-%s@%s' % (config['siteid'],
-                                           msgid,
-                                           courier.config.me())
+        release_addr = 'quarantine-%s-%s@%s' % (config['siteid'],
+                                                msgid,
+                                                courier.config.me())
     days = config['days']
     expiration = datetime.date.fromtimestamp(time.time() + (days * 86400)).strftime('%a %B %d, %Y')
     # Parse the message for its sender and subject:
     try:
-        bfStream = open(bodyFile)
+        bf_stream = open(body_file)
     except:
         raise #InitError('Internal failure opening message data file')
     try:
-        qmessage = email.message_from_file(bfStream)
-    except Exception, e:
+        qmessage = email.message_from_file(bf_stream)
+    except Exception as e:
         # TODO: Handle this error.
         raise #InitError('Internal failure parsing message data file: %s' % str(e))
-    qmessageSender = qmessage['from']
-    qmessageSubject = qmessage['subject']
+    qmessage_sender = qmessage['from']
+    qmessage_subject = qmessage['subject']
     message = """You received a message that was quarantined because:
 %s
 
@@ -172,58 +172,62 @@ Quarantine release address:
 %s
     """ % (explanation,
            expiration,
-           qmessageSender,
-           qmessageSubject,
-           release)
+           qmessage_sender,
+           qmessage_subject,
+           release_addr)
     # Mark recipients complete and send notices.
-    controlData = courier.control.getControlData(controlFileList)
-    for x in controlData['r']:
-        courier.control.delRecipientData(controlFileList, x)
-        sendNotice(message, x[0])
+    control_data = courier.control.get_control_data(control_files)
+    for x in control_data['r']:
+        courier.control.del_recipient_data(control_files, x)
+        send_notice(message, x[0])
 
 
-def release(requestedId, address):
+def release(requested_id, address):
     # Open and lock the quarantine DB
-    (dbm, lock) = _getDb()
-    if requestedId in dbm:
-        quarantinePaths = pickle.loads(dbm[requestedId])[1]
+    (dbm_stream, lock) = _get_db()
+    if requested_id in dbm_stream:
+        quarantine_paths = pickle.loads(dbm_stream[requested_id])[1]
     else:
-        quarantinePaths = None
+        quarantine_paths = None
     # Unlock the DB
-    _closeDb(dbm, lock)
-    # If quarantinePaths is None, then an invalid ID was requested.
-    if not quarantinePaths:
+    _close_db(dbm_stream, lock)
+    # If quarantine_paths is None, then an invalid ID was requested.
+    if not quarantine_paths:
         # Alert the user that his request failed
-        sendFailureNotice(requestedId, address)
+        send_failure_notice(requested_id, address)
         return
-    for x in courier.control.getControlData(quarantinePaths[1])['r']:
+    for x in courier.control.getControlData(quarantine_paths[1])['r']:
         if(x[0] == address or
            x[1] == address or
            x[1] == '%s%s' % ('rfc822;', address)):
-            courier.sendmail.sendmail('', address, quarantinePaths[0].read())
+            courier.sendmail.sendmail('', address, quarantine_paths[0].read())
             return
     # If no address matched, alert the user that the request was invalid.
-    sendFailureNotice(requestedId, address)
+    send_failure_notice(requested_id, address)
 
 
 def purge():
     # Open and lock the quarantine DB
-    (dbm, lock) = _getDb()
-    minVal = time.time() - (int(config['days']) * 86400)
-    for x in dbm.keys():
-        (qtime, quarantinePaths) = pickle.loads(dbm[x])
-        if qtime < minVal:
+    (dbm_stream, lock) = _get_db()
+    min_time = time.time() - (int(config['days']) * 86400)
+    for x in dbm_stream.keys():
+        (qtime, quarantine_paths) = pickle.loads(dbm_stream[x])
+        if qtime < min_time:
             # Files may have been removed for some reason, don't treat
             # that as a fatal condition.
             try:
-                os.remove(quarantinePaths[0])
-            except:
+                os.remove(quarantine_paths[0])
+            except OSError:
                 pass
-            for p in quarantinePaths[1]:
+            for p in quarantine_paths[1]:
                 try:
                     os.remove(p)
-                except:
+                except OSError:
                     pass
-            del dbm[x]
+            del dbm_stream[x]
     # Unlock the DB
-    _closeDb(dbm, lock)
+    _close_db(dbm_stream, lock)
+
+# Deprecated names preserved for compatibility with older releases
+sendNotice = send_notice
+sendFailureNotice = send_failure_notice
