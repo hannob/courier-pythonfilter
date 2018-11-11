@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import subprocess
-import thread
 import email
 # Compatibility with email version 3:
 # http://docs.python.org/lib/email-pkg-history.html
@@ -31,9 +28,6 @@ import courier.control
 import courier.config
 
 
-_envLock = thread.allocate_lock()
-
-
 class XFilterError(Exception):
     pass
 
@@ -42,7 +36,7 @@ class InitError(XFilterError):
     pass
 
 
-class XFilter(object):
+class XFilter:
     """Modify messages in the Courier spool.
 
     This class will load a specified message from Courier's spool and
@@ -53,51 +47,49 @@ class XFilter(object):
     no changes will be made to the original message.
 
     Arguments:
-    filterName -- a name identifying the filter calling this class
-    bodyFile -- the same argument given to the doFilter function
-    controlFileList -- the same argument given to the doFilter function
+    filter_name -- a name identifying the filter calling this class
+    body_file -- the same argument given to the doFilter function
+    control_files -- the same argument given to the doFilter function
 
     The class will raise xfilter.InitError when instantiated if it
-    cannot open the bodyFile or any of the control files.
+    cannot open the body_file or any of the control files.
 
-    After creating an instance of this class, use the getMessage
-    method to get the email.Message object created from the bodyFile.
+    After creating an instance of this class, use the get_message
+    method to get the email.Message object created from the body_file.
     Make any modifications required using the normal python functions
     usable with that object.
 
     When modifications are complete, call the XFilter object's submit
     method to insert the new message into the spool.
 
-    Use of this module under Courier < 0.57.1 is no longer supported.
-
     """
-    def __init__(self, filterName, bodyFile, controlFileList):
+    def __init__(self, filter_name, body_file, control_files):
         try:
-            bfStream = open(bodyFile)
+            bf_stream = open(body_file)
         except:
             raise InitError('Internal failure opening message data file')
         try:
-            self.message = email.message_from_file(bfStream)
-        except Exception, e:
+            self.message = email.message_from_file(bf_stream)
+        except Exception as e:
             raise InitError('Internal failure parsing message data file: %s' % str(e))
         # Save the arguments
-        self.filterName = filterName
-        self.bodyFile = bodyFile
-        self.controlFileList = controlFileList
+        self.filter_name = filter_name
+        self.body_file = body_file
+        self.control_files = control_files
         # Parse the control files and save their data
-        self.controlData = courier.control.getControlData(controlFileList)
+        self.control_data = courier.control.get_control_data(control_files)
 
-    def getMessage(self):
+    def get_message(self):
         return self.message
 
-    def setMessage(self, message):
+    def set_message(self, message):
         self.message = message
 
-    def getControlData(self):
-        return self.controlData
+    def get_control_data(self):
+        return self.control_data
 
     def submit(self):
-        bfo = open(self.bodyFile, 'r+')
+        bfo = open(self.body_file, 'r+')
         bfo.truncate(0)
         g = email.generator.Generator(bfo, mangle_from_=False)
         g.flatten(self.message)
@@ -109,6 +101,11 @@ class XFilter(object):
             bfo.write('\n')
         bfo.close()
         return ''
+
+    # Deprecated names preserved for compatibility with older releases
+    getMessage = get_message
+    setMessage = set_message
+    getControlData = get_control_data
 
 
 class DummyXFilter(XFilter):

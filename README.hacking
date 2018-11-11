@@ -335,22 +335,20 @@ class XFilter(filterName, bodyFile, controlFileList)
     no changes will be made to the original message.
 
     Arguments:
-    filterName -- a name identifying the filter calling this class
-    bodyFile -- the same argument given to the doFilter function
-    controlFileList -- the same argument given to the doFilter function
+    filter_name -- a name identifying the filter calling this class
+    body_file -- the same argument given to the doFilter function
+    control_files -- the same argument given to the doFilter function
 
     The class will raise xfilter.InitError when instantiated if it
-    cannot open the bodyFile or any of the control files.
+    cannot open the body_file or any of the control files.
 
-    After creating an instance of this class, use the getMessage
-    method to get the email.Message object created from the bodyFile.
+    After creating an instance of this class, use the get_message
+    method to get the email.Message object created from the body_file.
     Make any modifications required using the normal python functions
     usable with that object.
 
     When modifications are complete, call the XFilter object's submit
     method to insert the new message into the spool.
-
-    Use of this module under Courier < 0.57.1 is no longer supported.
 
 	This example adds a useless header to a message, using the XFilter
 	class:
@@ -366,11 +364,10 @@ sys.stderr.write('Initialized the "testxfilter" python filter\n')
 
 def doFilter(bodyFile, controlFileList):
     """Add a new header to incoming mail."""
-    mfilter = courier.xfilter.XFilter('testxfilter', bodyFile,
-                                      controlFileList)
-    mmsg = mfilter.getMessage()
+    mfilter = courier.xfilter.XFilter('testxfilter', body_file,
+                                      control_files)
+    mmsg = mfilter.get_message()
     mmsg['X-Test-Header'] = 'A new header!'
     submitVal = mfilter.submit()
-    # Return 250, no more filters should be run on this copy.
     return submitVal
 
