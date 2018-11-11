@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-import glob
-import os
-import sys
 from distutils.core import setup
 
 setup(name="courier-pythonfilter",
