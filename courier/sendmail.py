@@ -17,7 +17,7 @@
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
 import subprocess
-import config
+import courier.config
 
 def sendmail(from_addr, to_addrs, msg):
     """Send a message using Courier's sendmail application.
@@ -27,7 +27,7 @@ def sendmail(from_addr, to_addrs, msg):
             multiple addresses
     msg -- string representation of the message
     """
-    cmd = ['%s/sendmail' % config.bindir]
+    cmd = ['%s/sendmail' % courier.config.bindir]
     if from_addr:
         cmd.extend(['-f', from_addr])
     if isinstance(to_addrs, str):
