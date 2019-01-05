@@ -28,14 +28,6 @@ the courierfilter process will start the program.
 ##############################
 
 import os
-# See if fd #3 is open, indicating that courierfilter is waiting for us
-# to notify of init completion.
-try:
-    os.fstat(3)
-    notify_after_init = 1
-except OSError:
-    notify_after_init = 0
-
 import sys
 import select
 import socket
@@ -50,12 +42,20 @@ import courier.control
 # Config Options
 ##############################
 
+# See if fd #3 is open, indicating that courierfilter is waiting for us
+# to notify of init completion.
+try:
+    os.fstat(3)
+    notify_after_init = 1
+except OSError:
+    notify_after_init = 0
+
 # Set filter_all to 1 if you do not want users to be able to whitelist
 # specific senders
 filter_all = 1
 
 
-class LockedCounter(object):
+class LockedCounter():
     def __init__(self):
         self.lock = _thread.allocate_lock()
         self.count = 0
@@ -186,13 +186,13 @@ def create_socket():
         sys.stderr.write('pythonfilter failed to create socket in %s/%s\n' %
                          (courier.config.localstatedir, filter_dir))
         sys.exit()
-    return filter_socket
+    return (filter_socket, filter_socket_path)
 
 
 ##############################
 # Filter loop processing function
 ##############################
-def process_message(active_socket):
+def process_message(active_socket, filters, active_filters):
     # Create a file object from the socket so we can read from it
     # using .readline()
     active_socket_file = active_socket.makefile('r')
@@ -272,9 +272,9 @@ def log_file_codes(module, reply_code, control_files):
         pass
 
 
-def wait_for_message(filter_socket):
+def wait_for_message(filter_socket, filters, active_filters):
     try: ready_files = select.select([sys.stdin, filter_socket], [], [])
-    except Exception: continue
+    except Exception: return True
     # If stdin raised an event, it was closed and we need to exit.
     if sys.stdin in ready_files[0]:
         return False
@@ -285,7 +285,7 @@ def wait_for_message(filter_socket):
             # for new connections
             active_filters.inc()
             # Spawn thread and pass filenames as args
-            _thread.start_new_thread(process_message, (active_socket,))
+            _thread.start_new_thread(process_message, (active_socket, filters, active_filters))
         except Exception:
             # Take care of any potential problems after the above block fails
             sys.stderr.write('pythonfilter failed to accept connection '
@@ -317,7 +317,7 @@ def main():
     ##############################
     active_filters = LockedCounter()
     filters = load_filters()
-    filter_socket = create_socket()
+    (filter_socket, filter_socket_path) = create_socket()
 
     # Close fd 3 to notify courierfilter that initialization is complete
     if notify_after_init:
@@ -328,7 +328,7 @@ def main():
     ##############################
     stdin_open = True
     while stdin_open:
-        stdin_open = wait_for_message(filter_socket)
+        stdin_open = wait_for_message(filter_socket, filters, active_filters)
     close_socket(filter_socket_path, filter_socket)
     wait_for_active_filters(active_filters)
 
