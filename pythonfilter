@@ -297,15 +297,21 @@ def wait_for_message(filter_socket):
     return True
 
 
-##############################
-# Stop accepting connections when stdin closes, exit when filters are
-# complete.  Do not wait more than 10 seconds, as this might cause
-# problems with "courier restart"
-##############################
-# Dispose of the unix socket
-filter_socket.close()
-os.unlink(filter_socket_path)
-deadline = time.time() + 10
-while(active_filters.count > 0 and time.time() < deadline):
-    # Wait for them all to finish
-    time.sleep(0.1)
+def close_socket(filter_socket_path, filter_socket):
+    ##############################
+    # Stop accepting connections when stdin closes, exit when filters are
+    # complete.  Do not wait more than 10 seconds, as this might cause
+    # problems with "courier restart"
+    ##############################
+    # Dispose of the unix socket
+    os.unlink(filter_socket_path)
+    filter_socket.close()
+
+def wait_for_active_filters(active_filters):
+    deadline = time.time() + 10
+    while(active_filters.count > 0 and time.time() < deadline):
+        # Wait for them all to finish
+        time.sleep(0.1)
+
+close_socket(filter_socket_path, filter_socket)
+wait_for_active_filters(active_filters)
