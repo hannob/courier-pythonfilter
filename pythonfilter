@@ -158,9 +158,7 @@ try:
     filter_socket.listen(64)
 except Exception:
     # If the socket creation failed, remove sockets that might
-    # exist, so that courier will deliver mail.  It might be best
-    # to have courier *not* deliver mail when we fail, but that's
-    # not a step I'm ready to take.
+    # exist, so that courier will deliver mail.
     try_unlink(filter_socket_path1)
     try_unlink(filter_socket_path)
     sys.stderr.write('pythonfilter failed to create socket in %s/%s\n' %
@@ -263,12 +261,17 @@ def log_file_codes(module, reply_code, control_files):
 ##############################
 # Listen for connnections on socket
 ##############################
-while 1:
+stdin_open = True
+while stdin_open:
+    stdin_open = wait_for_message(filter_socket)
+
+def wait_for_message(filter_socket):
+    global active_filters
     try: ready_files = select.select([sys.stdin, filter_socket], [], [])
     except Exception: continue
     # If stdin raised an event, it was closed and we need to exit.
     if sys.stdin in ready_files[0]:
-        break
+        return False
     if filter_socket in ready_files[0]:
         try:
             active_socket, addr = filter_socket.accept()
@@ -284,6 +287,7 @@ while 1:
             sys.stderr.write('pythonfilter failed to accept connection '
                              'from courierfilter\n')
             active_filters_lock.release()
+    return True
 
 
 ##############################
