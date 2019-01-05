@@ -83,23 +83,27 @@ try:
 except OSError:
     notify_after_init = 0
 
+def open_config():
+    # First, locate and open the configuration file.
+    config = None
+    try:
+        config_dirs = ('/etc', '/usr/local/etc')
+        for x in config_dirs:
+            if os.access('%s/pythonfilter.conf' % x, os.R_OK):
+                config = open('%s/pythonfilter.conf' % x)
+                break
+    except IOError:
+        sys.stderr.write('Could not open config file for reading.\n')
+        sys.exit()
+        if not config:
+            sys.stderr.write('Could not locate a configuration file in any of: %s\n' %
+                             config_dirs)
+            sys.exit()
+    return config
+
+config = open_config()
 # Load filters
 filters = []
-# First, locate and open the configuration file.
-config = None
-try:
-    config_dirs = ('/etc', '/usr/local/etc')
-    for x in config_dirs:
-        if os.access('%s/pythonfilter.conf' % x, os.R_OK):
-            config = open('%s/pythonfilter.conf' % x)
-            break
-except IOError:
-    sys.stderr.write('Could not open config file for reading.\n')
-    sys.exit()
-if not config:
-    sys.stderr.write('Could not locate a configuration file in any of: %s\n' %
-                     config_dirs)
-    sys.exit()
 # Read the lines from the configuration file and load any module listed
 # therein.  Ignore lines that begin with a hash character.
 for x in config.readlines():
@@ -154,11 +158,13 @@ for x in config.readlines():
                          (import_error[0], import_error[1]))
         sys.stderr.write(''.join(traceback.format_tb(import_error[2])))
 
+
 def try_unlink(path):
     try:
         os.unlink(path)
     except OSError:
         pass
+
 
 # Setup socket for courierfilter connection if filters loaded
 # completely
