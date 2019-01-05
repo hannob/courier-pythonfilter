@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # dropmsg -- Removes messages from Courier queue without notice.
 # Copyright (C) 2012  Gordon Messmer <gordon@dragonsdawn.net>
 #
