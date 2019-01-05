@@ -37,6 +37,23 @@ import _thread
 import courier.config
 import courier.control
 
+
+class LockedCounter(object):
+    def __init__(self):
+        self.lock = _thread.allocate_lock()
+        self.count = 0
+
+    def inc(self):
+        self.lock.acquire()
+        self.count += 1
+        self.lock.release()
+
+    def dec(self):
+        self.lock.acquire()
+        self.count -= 1
+        self.lock.release()
+
+
 ##############################
 # Config Options
 ##############################
@@ -48,8 +65,7 @@ filter_all = 1
 ##############################
 # Initialize filter system
 ##############################
-active_filters = 0
-active_filters_lock = _thread.allocate_lock()
+active_filters = LockedCounter()
 if filter_all:
     filter_dir = 'allfilters'
 else:
@@ -235,12 +251,7 @@ def process_message(active_socket):
     else:
         active_socket.send(reply_code)
         log_file_codes(i_filter[0], reply_code, control_files)
-    # Acquire the lock and update the thread count.
-    active_filters_lock.acquire()
-    global active_filters
-    active_filters = active_filters - 1
-    active_filters_lock.release()
-    active_socket.close()
+    active_filters.dec()
 
 
 def log_file_codes(module, reply_code, control_files):
@@ -266,7 +277,6 @@ while stdin_open:
     stdin_open = wait_for_message(filter_socket)
 
 def wait_for_message(filter_socket):
-    global active_filters
     try: ready_files = select.select([sys.stdin, filter_socket], [], [])
     except Exception: continue
     # If stdin raised an event, it was closed and we need to exit.
@@ -277,16 +287,13 @@ def wait_for_message(filter_socket):
             active_socket, addr = filter_socket.accept()
             # Now, hand off control to a new thread and continue listening
             # for new connections
-            active_filters_lock.acquire()
-            active_filters = active_filters + 1
+            active_filters.inc()
             # Spawn thread and pass filenames as args
             _thread.start_new_thread(process_message, (active_socket,))
-            active_filters_lock.release()
         except Exception:
             # Take care of any potential problems after the above block fails
             sys.stderr.write('pythonfilter failed to accept connection '
                              'from courierfilter\n')
-            active_filters_lock.release()
     return True
 
 
@@ -299,6 +306,6 @@ def wait_for_message(filter_socket):
 filter_socket.close()
 os.unlink(filter_socket_path)
 deadline = time.time() + 10
-while(active_filters > 0 and time.time() < deadline):
+while(active_filters.count > 0 and time.time() < deadline):
     # Wait for them all to finish
     time.sleep(0.1)
