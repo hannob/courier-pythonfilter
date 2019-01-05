@@ -28,6 +28,14 @@ the courierfilter process will start the program.
 ##############################
 
 import os
+# See if fd #3 is open, indicating that courierfilter is waiting for us
+# to notify of init completion.
+try:
+    os.fstat(3)
+    notify_after_init = 1
+except OSError:
+    notify_after_init = 0
+
 import sys
 import select
 import socket
@@ -36,6 +44,15 @@ import traceback
 import _thread
 import courier.config
 import courier.control
+
+
+##############################
+# Config Options
+##############################
+
+# Set filter_all to 1 if you do not want users to be able to whitelist
+# specific senders
+filter_all = 1
 
 
 class LockedCounter(object):
@@ -52,28 +69,6 @@ class LockedCounter(object):
         self.lock.acquire()
         self.count -= 1
         self.lock.release()
-
-
-##############################
-# Config Options
-##############################
-
-# Set filter_all to 1 if you do not want users to be able to whitelist
-# specific senders
-filter_all = 1
-
-##############################
-# Initialize filter system
-##############################
-active_filters = LockedCounter()
-
-# See if fd #3 is open, indicating that courierfilter is waiting for us
-# to notify of init completion.
-try:
-    os.fstat(3)
-    notify_after_init = 1
-except OSError:
-    notify_after_init = 0
 
 
 def open_config():
@@ -155,9 +150,6 @@ def load_filters():
     return filters
 
 
-filters = load_filters()
-
-
 def try_unlink(path):
     try:
         os.unlink(path)
@@ -195,13 +187,6 @@ def create_socket():
                          (courier.config.localstatedir, filter_dir))
         sys.exit()
     return filter_socket
-
-
-filter_socket = create_socket()
-
-# Close fd 3 to notify courierfilter that initialization is complete
-if notify_after_init:
-    os.close(3)
 
 
 ##############################
@@ -287,13 +272,6 @@ def log_file_codes(module, reply_code, control_files):
         pass
 
 
-##############################
-# Listen for connnections on socket
-##############################
-stdin_open = True
-while stdin_open:
-    stdin_open = wait_for_message(filter_socket)
-
 def wait_for_message(filter_socket):
     try: ready_files = select.select([sys.stdin, filter_socket], [], [])
     except Exception: continue
@@ -325,11 +303,35 @@ def close_socket(filter_socket_path, filter_socket):
     os.unlink(filter_socket_path)
     filter_socket.close()
 
+
 def wait_for_active_filters(active_filters):
     deadline = time.time() + 10
     while(active_filters.count > 0 and time.time() < deadline):
         # Wait for them all to finish
         time.sleep(0.1)
 
-close_socket(filter_socket_path, filter_socket)
-wait_for_active_filters(active_filters)
+
+def main():
+    ##############################
+    # Initialize filter system
+    ##############################
+    active_filters = LockedCounter()
+    filters = load_filters()
+    filter_socket = create_socket()
+
+    # Close fd 3 to notify courierfilter that initialization is complete
+    if notify_after_init:
+        os.close(3)
+
+    ##############################
+    # Listen for connnections on socket
+    ##############################
+    stdin_open = True
+    while stdin_open:
+        stdin_open = wait_for_message(filter_socket)
+    close_socket(filter_socket_path, filter_socket)
+    wait_for_active_filters(active_filters)
+
+
+if __name__ == '__main__':
+    main()
