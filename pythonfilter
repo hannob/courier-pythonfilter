@@ -66,14 +66,6 @@ filter_all = 1
 # Initialize filter system
 ##############################
 active_filters = LockedCounter()
-if filter_all:
-    filter_dir = 'allfilters'
-else:
-    filter_dir = 'filters'
-filter_socket_path1 = '%s/%s/.pythonfilter' % (courier.config.localstatedir, filter_dir)
-filter_socket_path = '%s/%s/pythonfilter' % (courier.config.localstatedir, filter_dir)
-filter_socket_check1 = '%s/%s/pythonfilter' % (courier.config.localstatedir, 'filters')
-filter_socket_check2 = '%s/%s/pythonfilter' % (courier.config.localstatedir, 'allfilters')
 
 # See if fd #3 is open, indicating that courierfilter is waiting for us
 # to notify of init completion.
@@ -173,26 +165,39 @@ def try_unlink(path):
         pass
 
 
-# Setup socket for courierfilter connection if filters loaded
-# completely
-try:
-    # Remove stale sockets to prevent exceptions
-    try_unlink(filter_socket_check1)
-    try_unlink(filter_socket_check2)
-    try_unlink(filter_socket_path1)
-    filter_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    filter_socket.bind(filter_socket_path1)
-    os.rename(filter_socket_path1, filter_socket_path)
-    os.chmod(filter_socket_path, 0o660)
-    filter_socket.listen(64)
-except Exception:
-    # If the socket creation failed, remove sockets that might
-    # exist, so that courier will deliver mail.
-    try_unlink(filter_socket_path1)
-    try_unlink(filter_socket_path)
-    sys.stderr.write('pythonfilter failed to create socket in %s/%s\n' %
-                     (courier.config.localstatedir, filter_dir))
-    sys.exit()
+def create_socket():
+    if filter_all:
+        filter_dir = 'allfilters'
+    else:
+        filter_dir = 'filters'
+    filter_socket_path1 = '%s/%s/.pythonfilter' % (courier.config.localstatedir, filter_dir)
+    filter_socket_path = '%s/%s/pythonfilter' % (courier.config.localstatedir, filter_dir)
+    filter_socket_check1 = '%s/%s/pythonfilter' % (courier.config.localstatedir, 'filters')
+    filter_socket_check2 = '%s/%s/pythonfilter' % (courier.config.localstatedir, 'allfilters')
+    # Setup socket for courierfilter connection if filters loaded
+    # completely
+    try:
+        # Remove stale sockets to prevent exceptions
+        try_unlink(filter_socket_check1)
+        try_unlink(filter_socket_check2)
+        try_unlink(filter_socket_path1)
+        filter_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        filter_socket.bind(filter_socket_path1)
+        os.rename(filter_socket_path1, filter_socket_path)
+        os.chmod(filter_socket_path, 0o660)
+        filter_socket.listen(64)
+    except Exception:
+        # If the socket creation failed, remove sockets that might
+        # exist, so that courier will deliver mail.
+        try_unlink(filter_socket_path1)
+        try_unlink(filter_socket_path)
+        sys.stderr.write('pythonfilter failed to create socket in %s/%s\n' %
+                         (courier.config.localstatedir, filter_dir))
+        sys.exit()
+    return filter_socket
+
+
+filter_socket = create_socket()
 
 # Close fd 3 to notify courierfilter that initialization is complete
 if notify_after_init:
