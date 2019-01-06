@@ -38,9 +38,9 @@ def doFilter(bodyFile, controlFileList):
     sys.stderr.write('  GID: %s\n' % os.getgid())
     sys.stderr.write('  Additional groups: %s\n' % os.getgroups())
     sys.stderr.write('  Body: %s\n' % bodyFile)
-    sys.stderr.write('    Raw stat: %s\n' % os.stat(bodyFile))
+    sys.stderr.write('    Raw stat: %s\n' % (os.stat(bodyFile),))
     for f in controlFileList:
         sys.stderr.write('  Control file: %s\n' % f)
-        sys.stderr.write('    Raw stat: %s\n' % os.stat(f))
+        sys.stderr.write('    Raw stat: %s\n' % (os.stat(f),))
     # Return no decision.
     return ''
