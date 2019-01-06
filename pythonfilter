@@ -75,7 +75,7 @@ def open_config():
     # First, locate and open the configuration file.
     config = None
     try:
-        config_dirs = ('/etc', '/usr/local/etc')
+        config_dirs = ('/etc', '/usr/local/etc', courier.config.sysconfdir)
         for x in config_dirs:
             if os.access('%s/pythonfilter.conf' % x, os.R_OK):
                 config = open('%s/pythonfilter.conf' % x)
@@ -83,10 +83,10 @@ def open_config():
     except IOError:
         sys.stderr.write('Could not open config file for reading.\n')
         sys.exit()
-        if not config:
-            sys.stderr.write('Could not locate a configuration file in any of: %s\n' %
-                             config_dirs)
-            sys.exit()
+    if not config:
+        sys.stderr.write('Could not locate a configuration file in any of: %s\n' %
+                         (config_dirs,))
+        sys.exit()
     return config
 
 
@@ -250,9 +250,9 @@ def process_message(active_socket, filters, active_filters):
     # If all modules are ok or no filters are loaded, accept message
     #  else, write back error code and message
     if reply_code == '' or i_filter is None:
-        active_socket.send('200 Ok')
+        active_socket.send('200 Ok'.encode())
     else:
-        active_socket.send(reply_code)
+        active_socket.send(reply_code.encode())
         log_file_codes(i_filter[0], reply_code, control_files)
     active_filters.dec()
 

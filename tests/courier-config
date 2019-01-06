@@ -1,0 +1,19 @@
+#!/bin/sh
+
+pwd="$(pwd)"
+
+cat <<EOF
+prefix=${pwd}/lib/courier
+exec_prefix=${pwd}/lib/courier
+bindir=${pwd}/lib/courier/bin
+sbindir=${pwd}/lib/courier/sbin
+libexecdir=${pwd}/lib/courier/libexec
+sysconfdir=${pwd}/etc/courier
+datadir=${pwd}/lib/courier/share
+localstatedir=${pwd}/spool/courier
+mailuser=daemon
+mailgroup=daemon
+mailuid=2
+mailgid=2
+configure_args="'--host=x86_64-redhat-linux-gnu' '--build=x86_64-redhat-linux-gnu' '--target=x86_64-redhat-linux-gnu' '--program-prefix=' '--prefix=/usr/lib/courier' '--exec-prefix=/usr/lib/courier' '--bindir=/usr/lib/courier/bin' '--sbindir=/usr/lib/courier/sbin' '--sysconfdir=/etc/courier' '--datadir=/usr/lib/courier/share' '--includedir=/usr/lib/courier/include' '--libdir=/usr/lib/courier/lib64' '--libexecdir=/usr/lib/courier/libexec' '--localstatedir=/var/spool/courier' '--sharedstatedir=/var/lib' '--mandir=/usr/share/man' '--infodir=/usr/lib/courier/share/info' '--with-notice=unicode' '--cache-file=courier.config.cache' 'build_alias=x86_64-redhat-linux-gnu' 'host_alias=x86_64-redhat-linux-gnu' 'target_alias=x86_64-redhat-linux-gnu' 'CFLAGS=-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic' 'CXXFLAGS=-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic' 'PKG_CONFIG_PATH=:/usr/lib/courier/lib64/pkgconfig:/usr/lib/courier/share/pkgconfig' --with-db=gdbm --enable-utf7-folder-encoding"
+EOF
