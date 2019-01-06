@@ -24,7 +24,7 @@ import courier.config
 class TestModuleConfig(unittest.TestCase):
 
     def testLoader(self):
-        courier.config._standardConfigPaths = './configfiles/pythonfilter-modules.conf'
+        courier.config._standard_config_paths = './configfiles/pythonfilter-modules.conf'
         config = courier.config.getModuleConfig('test1')
         self.assertEqual(config['name1'], 'value1')
         self.assertEqual(config['name2'], 'value2')
@@ -58,7 +58,7 @@ class TestModuleConfig(unittest.TestCase):
 
 
     def testApply(self):
-        courier.config._standardConfigPaths = './configfiles/pythonfilter-modules.conf'
+        courier.config._standard_config_paths = './configfiles/pythonfilter-modules.conf'
         config = {}
         courier.config.applyModuleConfig('test1', config)
         self.assertEqual(config['name1'], 'value1')
