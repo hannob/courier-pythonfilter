@@ -53,6 +53,7 @@ def _setup():
         pass
     else:
         for ch_out_line in ch.stdout:
+            ch_out_line = ch_out_line.decode()
             try:
                 (setting, value) = ch_out_line.split('=', 1)
                 value = value.strip()
