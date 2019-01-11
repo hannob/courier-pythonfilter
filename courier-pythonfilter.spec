@@ -1,5 +1,5 @@
-%{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-%define expect_egg_info %(%{__python} -c "import distutils.command.install_egg_info" > /dev/null 2>&1 && echo 1 || echo 0)
+%{!?python_sitelib: %define python_sitelib %(%{__python3} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+%define expect_egg_info %(%{__python3} -c "import distutils.command.install_egg_info" > /dev/null 2>&1 && echo 1 || echo 0)
 
 %define courier_user    %(. /etc/profile.d/courier.sh ; courier-config | grep ^mailuser | cut -f2 -d=)
 %define courier_group   %(. /etc/profile.d/courier.sh ; courier-config | grep ^mailgroup | cut -f2 -d=)
@@ -18,8 +18,8 @@ Source0:   %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArchitectures: noarch
 
-BuildRequires: python, python-devel, courier
-Requires:  courier, python-hashlib
+BuildRequires: python3, python3-devel, courier
+Requires:  courier, python3
 
 %description
 Pythonfilter provides a framework for writing message filters in
@@ -31,12 +31,12 @@ Python, as well as a selection of common filters.
 
 
 %build
-python setup.py build
+python3 setup.py build
 
 
 %install
 rm -rf $RPM_BUILD_ROOT
-python setup.py install --skip-build --root=$RPM_BUILD_ROOT
+python3 setup.py install --skip-build --root=$RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/pythonfilter/quarantine
 
 mkdir -p ${RPM_BUILD_ROOT}%{courier_libexec}/filters
