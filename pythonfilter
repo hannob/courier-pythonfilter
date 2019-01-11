@@ -90,6 +90,36 @@ def open_config():
     return config
 
 
+def run_init_filter(module, module_name):
+    try:
+        module.initFilter()
+    except AttributeError:
+        # Log bad modules
+        error = sys.exc_info()
+        sys.stderr.write('Failed to run "initFilter" '
+                         'function from %s\n' %
+                         module_name)
+        sys.stderr.write('Exception : %s:%s\n' %
+                         (error[0], error[1]))
+        sys.stderr.write(''.join(traceback.format_tb(error[2])))
+
+
+def save_do_filter(module, module_name, bypass, filters):
+    try:
+        # Store the name of the filter module and a reference to its
+        # dofilter function in the "filters" array.
+        filters.append((module_name, module.doFilter, bypass))
+    except AttributeError:
+        # Log bad modules
+        import_error = sys.exc_info()
+        sys.stderr.write('Failed to load "doFilter" '
+                         'function from %s\n' %
+                         module_name)
+        sys.stderr.write('Exception : %s:%s\n' %
+                         (import_error[0], import_error[1]))
+        sys.stderr.write(''.join(traceback.format_tb(import_error[2])))
+
+
 def load_filters():
     config = open_config()
     # Load filters
@@ -123,30 +153,8 @@ def load_filters():
             sys.stderr.write(''.join(traceback.format_tb(import_error[2])))
             sys.exit()
         if hasattr(module, 'initFilter'):
-            try:
-                module.initFilter()
-            except AttributeError:
-                # Log bad modules
-                error = sys.exc_info()
-                sys.stderr.write('Failed to run "initFilter" '
-                                 'function from %s\n' %
-                                 module_name)
-                sys.stderr.write('Exception : %s:%s\n' %
-                                 (error[0], error[1]))
-                sys.stderr.write(''.join(traceback.format_tb(error[2])))
-        try:
-            # Store the name of the filter module and a reference to its
-            # dofilter function in the "filters" array.
-            filters.append((module_name, module.doFilter, bypass))
-        except AttributeError:
-            # Log bad modules
-            import_error = sys.exc_info()
-            sys.stderr.write('Failed to load "doFilter" '
-                             'function from %s\n' %
-                             module_name)
-            sys.stderr.write('Exception : %s:%s\n' %
-                             (import_error[0], import_error[1]))
-            sys.stderr.write(''.join(traceback.format_tb(import_error[2])))
+            run_init_filter(module, module_name)
+        save_do_filter(module, module_name, bypass, filters)
     return filters
 
 
