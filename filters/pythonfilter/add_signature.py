@@ -31,36 +31,35 @@ import courier.xfilter
 domains = {'example.com': '/etc/courier/signatures/example.com'}
 
 
-def getSignatureForDomain(domain):
+def get_signature_for_domain(domain):
     if domain in domains:
-        sigFile = open(domains[domain])
-        return sigFile.read()
-    else:
-        return None
+        sig_file = open(domains[domain])
+        return sig_file.read()
+    return None
 
 
-def initFilter():
+def init_filter():
     courier.config.applyModuleConfig('add_signature.py', globals())
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "add_signature" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
-    sender = courier.control.getAuthUser(controlFileList, bodyFile)
+def do_filter(body_file, control_files):
+    sender = courier.control.getAuthUser(control_files, body_file)
     if not sender:
         return ''
-    senderBits = sender.split('@')
-    if len(senderBits) == 1:
-        signature = getSignatureForDomain('')
+    sender_bits = sender.split('@')
+    if len(sender_bits) == 1:
+        signature = get_signature_for_domain('')
     else:
-        signature = getSignatureForDomain(senderBits[1])
+        signature = get_signature_for_domain(sender_bits[1])
     if not signature:
         return ''
     # Set the preferred encoding for UTF-8, which will be used in the signature
-    email.charset.add_charset( 'utf-8', email.charset.SHORTEST, email.charset.QP, None )
-    # Load the message from the bodyFile
+    email.charset.add_charset('utf-8', email.charset.SHORTEST, email.charset.QP, None)
+    # Load the message from the body_file
     mfilter = courier.xfilter.XFilter('add_signature',
-                                      bodyFile, controlFileList)
+                                      body_file, control_files)
     original = mfilter.getMessage()
     # Create a new message object
     msg = email.mime.multipart.MIMEMultipart('mixed')
@@ -75,10 +74,9 @@ def doFilter(bodyFile, controlFileList):
                     'MIME-Version'):
             continue
         msg.add_header(x[0], x[1])
-        del(original[x[0]])
+        del original[x[0]]
     # Replace the message body
     mfilter.setMessage(msg)
-    submitVal = mfilter.submit()
     # Return the value from submit(), which may stop other filters
     # from running.
-    return submitVal
+    return mfilter.submit()
