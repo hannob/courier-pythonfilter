@@ -25,51 +25,51 @@ import tempfile
 import courier.config
 try:
     import libarchive
-    haveLibarchive = True
-except:
-    haveLibarchive = False
+    HAVE_LIBARCHIVE = True
+except ImportError:
+    HAVE_LIBARCHIVE = False
 
 
-blockedPattern = re.compile(r'^.*\.(scr|exe|com|bat|pif|lnk|sys|mid|vb|js|ws|shs|ceo|cmd|cpl|hta|vbs)$', re.I)
+blocked_pattern = re.compile(r'^.*\.(scr|exe|com|bat|pif|lnk|sys|mid|vb|js|ws|shs|ceo|cmd|cpl|hta|vbs)$', re.I)
 
 
-def initFilter():
-    config = courier.config.getModuleConfig('attachments.py')
-    if 'blockedPattern' in config:
-        # blockedPattern in configuration file should be only the
+def init_filter():
+    config = courier.config.get_module_config('attachments.py')
+    if 'blocked_pattern' in config:
+        # blocked_pattern in configuration file should be only the
         # regular expression.  We recompile it here.
-        global blockedPattern
-        blockedPattern = re.compile(config['blockedPattern'], re.I)
+        global blocked_pattern
+        blocked_pattern = re.compile(config['blocked_pattern'], re.I)
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "attachments" python filter\n')
 
 
-def checkArchive(filename, part):
-    if not haveLibarchive:
+def check_archive(filename, part):
+    if not HAVE_LIBARCHIVE:
         return False
     fparts = filename.split('.')
     if fparts[-1].lower() in libarchive.FILTERS:
         fparts.pop()
     if fparts[-1].lower() not in libarchive.FORMATS:
         return False
-    d = tempfile.mkdtemp()
-    f = '%s/%s' % (d, filename.replace('/',''))
-    t = open(f,'w')
-    t.write(part.get_payload(decode=True))
-    t.close()
-    a = libarchive.Archive(f)
+    tmp_d = tempfile.mkdtemp()
+    tmp_path = '%s/%s' % (tmp_d, filename.replace('/', ''))
+    tmp_file = open(tmp_path, 'w')
+    tmp_file.write(part.get_payload(decode=True))
+    tmp_file.close()
+    archive = libarchive.Archive(tmp_path)
     found = False
-    for entry in a:
-        if blockedPattern.match(entry.pathname):
+    for entry in archive:
+        if blocked_pattern.match(entry.pathname):
             found = True
-    os.unlink(f)
-    os.rmdir(d)
+    os.unlink(tmp_path)
+    os.rmdir(tmp_d)
     return found
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     try:
-        msg = email.message_from_file(open(bodyFile))
-    except Exception, e:
+        msg = email.message_from_file(open(body_file))
+    except Exception as e:
         return "554 " + str(e)
 
     for part in msg.walk():
@@ -80,14 +80,14 @@ def doFilter(bodyFile, controlFileList):
         filename = part.get_filename()
         if not filename:
             continue
-        if type(filename) is str:
+        if isinstance(filename, str):
             dh = email.header.decode_header(filename)
-            filename = ''.join([ unicode(t[0], t[1] or default_charset) for t in dh ])
+            filename = ''.join([str(t[0], t[1]) for t in dh])
 
-        if checkArchive(filename, part):
+        if check_archive(filename, part):
             return "554 The extension of the attached file is blacklisted"
 
-        if blockedPattern.match(filename):
+        if blocked_pattern.match(filename):
             return "554 The extension of the attached file is blacklisted"
 
     return ''
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # that the message would be rejected, or print nothing to
     # indicate that the remaining filters would be run.
     if len(sys.argv) != 2:
-        print "Usage: attachments.py <message_body_file>"
+        print("Usage: attachments.py <message_body_file>")
         sys.exit(0)
-    initFilter()
-    print doFilter(sys.argv[1], [])
+    init_filter()
+    print(do_filter(sys.argv[1], []))
