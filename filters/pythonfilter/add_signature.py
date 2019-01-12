@@ -39,13 +39,13 @@ def get_signature_for_domain(domain):
 
 
 def init_filter():
-    courier.config.applyModuleConfig('add_signature.py', globals())
+    courier.config.apply_module_config('add_signature.py', globals())
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "add_signature" python filter\n')
 
 
 def do_filter(body_file, control_files):
-    sender = courier.control.getAuthUser(control_files, body_file)
+    sender = courier.control.get_auth_user(control_files, body_file)
     if not sender:
         return ''
     sender_bits = sender.split('@')
