@@ -21,12 +21,12 @@ import os
 import sys
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "debug" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Print debugging information to stderr."""
 
     sys.stderr.write('Debugging filter invoked:\n')
@@ -37,9 +37,9 @@ def doFilter(bodyFile, controlFileList):
     sys.stderr.write('  UID: %s\n' % os.getuid())
     sys.stderr.write('  GID: %s\n' % os.getgid())
     sys.stderr.write('  Additional groups: %s\n' % os.getgroups())
-    sys.stderr.write('  Body: %s\n' % bodyFile)
-    sys.stderr.write('    Raw stat: %s\n' % (os.stat(bodyFile),))
-    for f in controlFileList:
+    sys.stderr.write('  Body: %s\n' % body_file)
+    sys.stderr.write('    Raw stat: %s\n' % (os.stat(body_file),))
+    for f in control_files:
         sys.stderr.write('  Control file: %s\n' % f)
         sys.stderr.write('    Raw stat: %s\n' % (os.stat(f),))
     # Return no decision.
