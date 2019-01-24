@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
-import errno
 import hashlib
-import select
 import smtplib
 import socket
 import sys
