@@ -298,8 +298,8 @@ def log_file_codes(module, reply_code, control_files):
     # expansion and also modification of the control files by filters.
     try:
         if not (reply_code.startswith('2') or reply_code.startswith('0')):
-            sender = courier.control.getSender(control_files)
-            for r in courier.control.getRecipients(control_files):
+            sender = courier.control.get_sender(control_files)
+            for r in courier.control.get_recipients(control_files):
                 sys.stderr.write('pythonfilter %s reject,from=<%s>,addr=<%s>: %s\n' %
                                  (module, sender, r, reply_code))
     except Exception:

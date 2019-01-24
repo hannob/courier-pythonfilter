@@ -40,7 +40,7 @@ def init():
     global config
     # Load the configuration if it has not already been loaded.
     if 'default' in config:
-        config = courier.config.getModuleConfig('Quarantine')
+        config = courier.config.get_module_config('Quarantine')
 
 
 def _get_db():
@@ -196,7 +196,7 @@ def release(requested_id, address):
         # Alert the user that his request failed
         send_failure_notice(requested_id, address)
         return
-    for x in courier.control.getControlData(quarantine_paths[1])['r']:
+    for x in courier.control.get_control_data(quarantine_paths[1])['r']:
         if(x[0] == address or
            x[1] == address or
            x[1] == '%s%s' % ('rfc822;', address)):

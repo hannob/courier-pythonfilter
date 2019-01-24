@@ -55,19 +55,19 @@ def search(auth, ip, sender):
             df = os.path.join(dirpath, d)
 
             if auth:
-                cauth = courier.control.getAuthUser((cf,), df)
+                cauth = courier.control.get_auth_user((cf,), df)
                 if cauth in auth:
                     drop(cf, df)
             if ip:
-                cip = courier.control.getSendersIP((cf,))
+                cip = courier.control.get_senders_ip((cf,))
                 if cip in ip:
                     drop(cf, df)
             if sender:
-                csender = courier.control.getSender((cf,))
+                csender = courier.control.get_sender((cf,))
                 if csender in sender:
                     drop(cf, df)
                 if csender == '':
-                    crecipient = courier.control.getRecipients((cf,))
+                    crecipient = courier.control.get_recipients((cf,))
                     if crecipient[0] in sender:
                         drop(cf, df)
 
