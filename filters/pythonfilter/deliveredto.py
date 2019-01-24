@@ -22,12 +22,12 @@ import sys
 import courier.config
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "deliveredto" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Check 'Delivered-to' header
 
     Reject messages if the Delivered-to header indicates a
@@ -35,11 +35,11 @@ def doFilter(bodyFile, controlFileList):
 
     """
     try:
-        bfStream = open(bodyFile)
+        bf_stream = open(body_file)
     except:
         return '451 Internal failure opening message data file'
     try:
-        message = email.message_from_file(bfStream)
+        message = email.message_from_file(bf_stream)
     except:
         return '451 Internal failure parsing message data file'
     if 'Delivered-To' in message:
@@ -47,7 +47,7 @@ def doFilter(bodyFile, controlFileList):
         dparts = dheader.split('@')
         if len(dparts) != 2:
             return ''
-        if(courier.config.isLocal(dparts[1]) or 
+        if(courier.config.isLocal(dparts[1]) or
            courier.config.isHosteddomain(dparts[1])):
             return '501 Mail loop - already have my Delivered-To: header.'
     return ''
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     # For debugging, you can create a file or set of files that
     # mimics the Courier control file set.
     if not sys.argv[1:]:
-        print 'Use:  deliveredto.py <message body file>'
+        print('Use:  deliveredto.py <message body file>')
         sys.exit(1)
-    initFilter()
-    print doFilter(sys.argv[1], '')
+    init_filter()
+    print(do_filter(sys.argv[1], ''))
