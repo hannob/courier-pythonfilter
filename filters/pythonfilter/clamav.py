@@ -21,60 +21,48 @@
 import sys
 import courier.config
 import courier.quarantine
+import pyclamd
 
-localSocket = ''
+local_socket = ''
 action = 'reject'
 
-try:
-    import pyclamav
-    def scanMessage(bodyFile, controlFileList):
-        try:
-            avresult = pyclamav.scanfile(bodyFile)
-        except Exception, e:
-            return "430 " + str(e)
-        if avresult[0]:
-            return handleVirus(bodyFile, controlFileList, avresult[1])
-        return ''
-except ImportError:
-    import pyclamd
-    def scanMessage(bodyFile, controlFileList):
-        try:
-            clamd = pyclamd.ClamdUnixSocket(localSocket)
-            avresult = clamd.scan_file(bodyFile)
-        except Exception, e:
-            return "430 Virus scanner error: " + str(e)
-        if avresult is not None and bodyFile in avresult:
-            if avresult[bodyFile][0] == 'FOUND':
-                return handleVirus(bodyFile, controlFileList, avresult[bodyFile][1])
-            else:
-                return "430 Virus scanner error: " + avresult[bodyFile][1]
-        return ''
+
+def scan_message(body_file, control_files):
+    try:
+        clamd = pyclamd.ClamdUnixSocket(local_socket)
+        avresult = clamd.scan_file(body_file)
+    except pyclamd.ConnectionError as e:
+        return "430 Virus scanner error: " + str(e)
+    if avresult is not None and body_file in avresult:
+        if avresult[body_file][0] == 'FOUND':
+            return handle_virus(body_file, control_files, avresult[body_file][1])
+        return "430 Virus scanner error: " + avresult[body_file][1]
+    return ''
 
 
-def handleVirus(bodyFile, controlFileList, virusSignature):
+def handle_virus(body_file, control_files, virus_signature):
     if action == 'reject':
-        return "554 Virus found - Signature is %s" % virusSignature
-    else:
-        courier.quarantine.quarantine(bodyFile, controlFileList,
-                                      'The virus %s was found in the message' % virusSignature)
-        return '050 OK'
+        return "554 Virus found - Signature is %s" % virus_signature
+    courier.quarantine.quarantine(body_file, control_files,
+                                  'The virus %s was found in the message' % virus_signature)
+    return '050 OK'
 
 
-def initFilter():
-    courier.config.applyModuleConfig('clamav.py', globals())
+def init_filter():
+    courier.config.apply_module_config('clamav.py', globals())
     courier.quarantine.init()
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "clamav" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
-    return scanMessage(bodyFile, controlFileList)
+def do_filter(body_file, control_files):
+    return scan_message(body_file, control_files)
 
 
 if __name__ == '__main__':
     # we only work with 1 parameter
     if len(sys.argv) < 3:
-        print "Usage: clamav.py <message_body_file> <control_files>"
+        print("Usage: clamav.py <message_body_file> <control_files>")
         sys.exit(0)
-    initFilter()
-    print doFilter(sys.argv[1], sys.argv[2:])
+    init_filter()
+    print(do_filter(sys.argv[1], sys.argv[2:]))
