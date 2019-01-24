@@ -24,38 +24,38 @@ import smtplib
 import socket
 import sys
 import time
-import courier.config
-import TtlDb
 import DNS
+import courier.config
+from . import TtlDb
 
 
 # The good/bad senders lists will be scrubbed at the interval indicated
 # in seconds.  All records older than the "TTL" number of seconds
 # will be removed from the lists.
-sendersTTL = 60 * 60 * 24 * 7
-sendersPurgeInterval = 60 * 60 * 12
+senders_ttl = 60 * 60 * 24 * 7
+senders_purge_interval = 60 * 60 * 12
 
 # SMTP conversation timeout in seconds.  Setting this too low will
 # lead to 4XX failures.
-smtpTimeout = 60
+smtp_timeout = 60
 
 # The postmaster address will be used for the "MAIL" command in the
 # dialback conversation.  You can set this to a zero-length string,
 # instead, in which case you'll refuse mail when the sender's mail
 # server doesn't accept DSNs, as it is required to by RFC.
-postmasterAddr = 'postmaster@%s' % courier.config.me()
+postmaster_addr = 'postmaster@%s' % courier.config.me()
 
 
-def initFilter():
-    courier.config.applyModuleConfig('dialback.py', globals())
+def init_filter():
+    courier.config.apply_module_config('dialback.py', globals())
     # Keep a dictionary of authenticated senders to avoid more work than
     # required.
     try:
-        global _goodSenders
-        global _badSenders
-        _goodSenders = TtlDb.TtlDb('goodsenders', sendersTTL, sendersPurgeInterval)
-        _badSenders = TtlDb.TtlDb('badsenders', sendersTTL, sendersPurgeInterval)
-    except TtlDb.OpenError, e:
+        global _good_senders
+        global _bad_senders
+        _good_senders = TtlDb.TtlDb('goodsenders', senders_ttl, senders_purge_interval)
+        _bad_senders = TtlDb.TtlDb('badsenders', senders_ttl, senders_purge_interval)
+    except TtlDb.OpenError as e:
         sys.stderr.write('Could not open dialback TtlDb: %s\n' % e)
         sys.exit(1)
     # Initialize the DNS module
@@ -64,7 +64,7 @@ def initFilter():
     sys.stderr.write('Initialized the dialback python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Contact the MX for this message's sender and validate their address.
 
     Validation will be done by starting an SMTP session with the MX and
@@ -74,39 +74,39 @@ def doFilter(bodyFile, controlFileList):
 
     # Grab the sender from the control files.
     try:
-        sender = courier.control.getSender(controlFileList)
+        sender = courier.control.get_sender(control_files)
     except:
         return '451 Internal failure locating control files'
     if sender == '':
         # Null sender is allowed as a non-fatal error
         return ''
-    senderMd5 = hashlib.md5(sender).hexdigest()
+    sender_md5 = hashlib.md5(sender).hexdigest()
 
-    _goodSenders.purge()
-    _badSenders.purge()
+    _good_senders.purge()
+    _bad_senders.purge()
     # If this sender is known already, then we don't actually need to do the
     # dialback.  Update the timestamp in the dictionary and then return the
     # status.
-    _goodSenders.lock()
+    _good_senders.lock()
     try:
-        if senderMd5 in _goodSenders:
-            _goodSenders[senderMd5] = time.time()
+        if sender_md5 in _good_senders:
+            _good_senders[sender_md5] = time.time()
             # Lock will be released in "finally" clause.
             return ''
     finally:
-        _goodSenders.unlock()
-    _badSenders.lock()
+        _good_senders.unlock()
+    _bad_senders.lock()
     try:
-        if senderMd5 in _badSenders:
-            _badSenders[senderMd5] = time.time()
+        if sender_md5 in _bad_senders:
+            _bad_senders[sender_md5] = time.time()
             # Lock will be released in "finally" clause.
             return '517 Sender does not exist: %s' % sender
     finally:
-        _badSenders.unlock()
+        _bad_senders.unlock()
 
     # The sender is new, so break the address into name and domain parts.
     try:
-        (senderName, senderDomain) = sender.split('@')
+        (sender_name, sender_domain) = sender.split('@')
     except:
         # Pretty sure this can't happen...
         return '501 Envelope sender is invalid'
@@ -116,11 +116,11 @@ def doFilter(bodyFile, controlFileList):
     # host.  If no A record is found, then perhaps the message is a DSN...
     # Just return a success code if no MX and no A records are found.
     try:
-        mxList = DNS.mxlookup(senderDomain)
-        if not mxList:
-            if socket.getaddrinfo(senderDomain, 'smtp'):
-                # put this host in the mxList and continue
-                mxList.append((1, senderDomain))
+        mx_list = DNS.mxlookup(sender_domain)
+        if not mx_list:
+            if socket.getaddrinfo(sender_domain, 'smtp'):
+                # put this host in the mx_list and continue
+                mx_list.append((1, sender_domain))
             else:
                 # no record was found
                 return ''
@@ -128,7 +128,7 @@ def doFilter(bodyFile, controlFileList):
         # Probably a DNS timeout...
         # Also should never happen, because courier's smtpd should have
         # just validated this domain.
-        return '421 DNS failure resolving %s' % senderDomain
+        return '421 DNS failure resolving %s' % sender_domain
 
     # Loop through the dial-back candidates and ask each one to validate
     # the address that we got as the sender.  If they return a success
@@ -139,16 +139,16 @@ def doFilter(bodyFile, controlFileList):
 
     # Unless we get a satisfactory responce from a server, we'll use
     # this as the filer status.
-    filterReply = '421 No SMTP servers were available to authenticate sender'
+    filter_reply = '421 No SMTP servers were available to authenticate sender'
 
-    for MX in mxList:
+    for mx in mx_list:
         # Create an SMTP instance.  If the dialback thread takes
         # too long, we'll close its socket.
         smtpi = ThreadSMTP()
         try:
-            smtpi.connect(MX[1])
+            smtpi.connect(mx[1])
         except:
-            filterReply = '400 SMTP class exception during connect'
+            filter_reply = '400 SMTP class exception during connect'
             continue
 
         try:
@@ -156,56 +156,56 @@ def doFilter(bodyFile, controlFileList):
             if code // 100 != 2:
                 # Save the error message.  If no other servers are available,
                 # inform the sender, but don't save the sender as bad.
-                filterReply = '421 %s rejected the HELO command' % MX[1]
+                filter_reply = '421 %s rejected the HELO command' % mx[1]
                 smtpi.close()
                 continue
         except:
-            filterReply = '400 SMTP class exception during HELO'
+            filter_reply = '400 SMTP class exception during HELO'
             continue
 
         try:
-            (code, reply) = smtpi.mail(postmasterAddr)
+            (code, reply) = smtpi.mail(postmaster_addr)
             if code // 100 != 2:
                 # Save the error message.  If no other servers are available,
                 # inform the sender, but don't save the sender as bad.
-                filterReply = '421 %s rejected the MAIL FROM command' % MX[1]
+                filter_reply = '421 %s rejected the MAIL FROM command' % mx[1]
                 smtpi.close()
                 continue
         except:
-            filterReply = '400 SMTP class exception during MAIL command'
+            filter_reply = '400 SMTP class exception during MAIL command'
             continue
 
         try:
             (code, reply) = smtpi.rcpt(sender)
             if code // 100 == 2:
                 # Success!  Mark this user good, and stop testing.
-                _goodSenders.lock()
+                _good_senders.lock()
                 try:
-                    _goodSenders[senderMd5] = time.time()
+                    _good_senders[sender_md5] = time.time()
                 finally:
-                    _goodSenders.unlock()
-                filterReply = ''
+                    _good_senders.unlock()
+                filter_reply = ''
                 break
             elif code // 100 == 5:
                 # Mark this user bad and stop testing.
-                _badSenders.lock()
+                _bad_senders.lock()
                 try:
-                    _badSenders[senderMd5] = time.time()
+                    _bad_senders[sender_md5] = time.time()
                 finally:
-                    _badSenders.unlock()
-                filterReply = ('517-MX server %s said:\n'
-                               '517 Sender does not exist: %s' % (MX[1], sender))
+                    _bad_senders.unlock()
+                filter_reply = ('517-MX server %s said:\n'
+                                '517 Sender does not exist: %s' % (mx[1], sender))
                 break
             else:
                 # Save the error message, but try to find a server that will
                 # provide a better answer.
-                filterReply = ('421-Unable to validate sender address.'
-                               '421 MX server %s provided unknown reply\n' % (MX[1]))
+                filter_reply = ('421-Unable to validate sender address.'
+                                '421 MX server %s provided unknown reply\n' % (mx[1]))
             smtpi.quit()
         except:
-            filterReply = '400 SMTP class exception during RCPT command'
+            filter_reply = '400 SMTP class exception during RCPT command'
             continue
-    return filterReply
+    return filter_reply
 
 
 class ThreadSMTP(smtplib.SMTP):
@@ -235,7 +235,7 @@ class ThreadSMTP(smtplib.SMTP):
                 except ValueError:
                     raise socket.error("nonnumeric port")
         if not port: port = smtplib.SMTP_PORT
-        if self.debuglevel > 0: print>>sys.stderr, 'connect:', (host, port)
+        if self.debuglevel > 0: print('connect:', (host, port), file=sys.stderr)
         msg = "getaddrinfo returns an empty list"
         self.sock = None
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
@@ -243,26 +243,26 @@ class ThreadSMTP(smtplib.SMTP):
             try:
                 self.sock = socket.socket(af, socktype, proto)
                 self.sock.setblocking(0)
-                if self.debuglevel > 0: print>>sys.stderr, 'connect:', (host, port)
+                if self.debuglevel > 0: print('connect:', (host, port), file=sys.stderr)
                 # Try to connect to the non-blocking socket.  We expect connect()
                 # to throw an error, indicating that the connection is in progress.
                 # Use select to wait for the connection to complete, and then check
                 # for errors with getsockopt.
                 try:
                     self.sock.connect(sa)
-                except socket.error, e:
+                except socket.error as e:
                     if e[0] != errno.EINPROGRESS:
                         raise
-                    readySocks = select.select([self.sock], [], [], smtpTimeout)
-                    if self.sock in readySocks[0]:
-                        soError = self.sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
-                        if soError:
-                            raise socket.error('connection failed, error: %d' % soError)
+                    ready_socks = select.select([self.sock], [], [], smtp_timeout)
+                    if self.sock in ready_socks[0]:
+                        so_error = self.sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+                        if so_error:
+                            raise socket.error('connection failed, error: %d' % so_error)
                     else:
                         # The connection timed out.
                         raise socket.error('connection timed out')
-            except socket.error, msg:
-                if self.debuglevel > 0: print>>sys.stderr, 'connect fail:', (host, port)
+            except socket.error as msg:
+                if self.debuglevel > 0: print('connect fail:', (host, port), file=sys.stderr)
                 if self.sock:
                     self.sock.close()
                 self.sock = None
@@ -271,13 +271,13 @@ class ThreadSMTP(smtplib.SMTP):
         if not self.sock:
             raise socket.error(msg)
         (code, msg) = self.getreply()
-        if self.debuglevel > 0: print>>sys.stderr, "connect:", msg
+        if self.debuglevel > 0: print("connect:", msg, file=sys.stderr)
         return (code, msg)
 
 
     def send(self, str_):
         """Send `str_' to the server."""
-        if self.debuglevel > 0: print>>sys.stderr, 'send:', repr(str_)
+        if self.debuglevel > 0: print('send:', repr(str_), file=sys.stderr)
         if self.sock:
             try:
                 # Loop: Wait for select() to indicate that the socket is ready
@@ -286,8 +286,8 @@ class ThreadSMTP(smtplib.SMTP):
                 # continue to attempt to send it.  If select() times out, raise
                 # an exception and let the handler close the connection.
                 while str_:
-                    readySocks = select.select([], [self.sock], [], smtpTimeout)
-                    if not readySocks[1]:
+                    ready_socks = select.select([], [self.sock], [], smtp_timeout)
+                    if not ready_socks[1]:
                         raise socket.error('Write timed out.')
                     sent = self.sock.send(str_)
                     if sent < len(str_):
@@ -315,16 +315,16 @@ class ThreadSMTP(smtplib.SMTP):
 
         Raises SMTPServerDisconnected if end-of-file is reached.
         """
-        resp=[]
+        resp = []
         while 1:
             try:
                 line = self._nonblockReadline()
             except socket.error:
                 self.close()
                 raise smtplib.SMTPServerDisconnected("Connection unexpectedly closed")
-            if self.debuglevel > 0: print>>sys.stderr, 'reply:', repr(line)
+            if self.debuglevel > 0: print('reply:', repr(line), file=sys.stderr)
             resp.append(line[4:].strip())
-            code=line[:3]
+            code = line[:3]
             # Check that the error code is syntactically correct.
             # Don't attempt to read a continuation line if it is broken.
             try:
@@ -333,12 +333,12 @@ class ThreadSMTP(smtplib.SMTP):
                 errcode = -1
                 break
             # Check if multiline response.
-            if line[3:4]!="-":
+            if line[3:4] != "-":
                 break
 
         errmsg = "\n".join(resp)
         if self.debuglevel > 0:
-            print>>sys.stderr, 'reply: retcode (%s); Msg: %s' % (errcode,errmsg)
+            print('reply: retcode (%s); Msg: %s' % (errcode, errmsg), file=sys.stderr)
         return errcode, errmsg
 
 
@@ -350,8 +350,8 @@ class ThreadSMTP(smtplib.SMTP):
         buffers = []
         recv = self.sock.recv
         while data != "\n":
-            readySocks = select.select([self.sock], [], [], smtpTimeout)
-            if not readySocks[0]:
+            ready_socks = select.select([self.sock], [], [], smtp_timeout)
+            if not ready_socks[0]:
                 raise socket.error('readline timed out')
             data = recv(1)
             if not data:
@@ -366,7 +366,7 @@ if __name__ == '__main__':
     # address.  Run this script with the name of that file as an
     # argument, and it'll validate that email address.
     if not sys.argv[1:]:
-        print 'Use:  dialback.py <control file>'
+        print('Use:  dialback.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter('', sys.argv[1:])
+    init_filter()
+    print(do_filter('', sys.argv[1:]))
