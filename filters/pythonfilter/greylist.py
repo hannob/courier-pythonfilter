@@ -28,9 +28,6 @@ import courier.control
 import TtlDb
 
 
-# Enable or disable debug logging.
-doDebug = 0
-
 # The good/bad senders lists will be scrubbed at the interval indicated,
 # in seconds, by the sendersPurgeInterval setting.  Any triplets which
 # haven't successfully passed a message will be purged at the age
@@ -42,11 +39,6 @@ sendersPurgeInterval = 60 * 60 * 2
 sendersPassedTTL = 60 * 60 * 24 * 36
 sendersNotPassedTTL = 60 * 60 * 24
 greylistTime = 300
-
-
-def _Debug(msg):
-    if doDebug:
-        sys.stderr.write(msg + '\n')
 
 
 def initFilter():
@@ -130,24 +122,19 @@ def doFilter(bodyFile, controlFileList):
         _sendersNotPassed.lock()
         try:
             if cdigest in _sendersNotPassed:
-                _Debug('found triplet in the NotPassed db')
                 firstTimestamp = float(_sendersNotPassed[cdigest])
                 timeToGo = firstTimestamp + greylistTime - time.time()
                 if timeToGo > 0:
                     # The sender needs to wait longer before this delivery is allowed.
-                    _Debug('triplet in NotPassed db is not old enough')
                     foundAll = 0
                     if timeToGo > biggestTimeToGo:
                         biggestTimeToGo = timeToGo
                 else:
-                    _Debug('triplet in NotPassed db is now passed')
                     _sendersPassed[cdigest] = time.time()
                     del(_sendersNotPassed[cdigest])
             elif cdigest in _sendersPassed:
-                _Debug('triplet found in the Passed db')
                 _sendersPassed[cdigest] = time.time()
             else:
-                _Debug('new triplet in this message')
                 foundAll = 0
                 timeToGo = greylistTime
                 if timeToGo > biggestTimeToGo:
