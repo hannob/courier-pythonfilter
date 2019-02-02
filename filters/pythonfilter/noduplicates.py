@@ -21,24 +21,24 @@ import sys
 import courier.control
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "noduplicates" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
-    """Remove duplicate addresses controlFileList
+def do_filter(body_file, control_files):
+    """Remove duplicate addresses control_files
 
     Courier will duplicate canonical addresses if their original
     address differed.
 
     """
-    rcpts = courier.control.getRecipientsData(controlFileList)
+    rcpts = courier.control.get_recipients_data(control_files)
     rdups = {}
     for x in rcpts:
         if x[0] in rdups:
             sys.stderr.write('noduplicates filter: Removing duplicate address "%s" from control file.\n' % x[0])
-            courier.control.delRecipientData(controlFileList, x)
+            courier.control.del_recipient_data(control_files, x)
         rdups[x[0]] = 1
     # Return no decision.
     return ''
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     # Run this script with the name of those files as arguments,
     # and it'll rewrite them with no duplicate canonical addresses.
     if not sys.argv[1:]:
-        print 'Use:  noduplicates.py <control file>'
+        print('Use:  noduplicates.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter('', sys.argv[1:])
+    init_filter()
+    print(do_filter('', sys.argv[1:]))
