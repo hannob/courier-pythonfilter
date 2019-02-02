@@ -22,30 +22,30 @@ import courier.control
 import courier.xfilter
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "noreceivedheaders" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Remove the Received header if the sender authenticated himself."""
-    authUser = courier.control.getAuthUser(controlFileList, bodyFile)
-    if authUser is None:
+    auth_user = courier.control.get_auth_user(control_files, body_file)
+    if auth_user is None:
         return ''
-    mfilter = courier.xfilter.XFilter('noreceivedheaders', bodyFile,
-                                      controlFileList)
+    mfilter = courier.xfilter.XFilter('noreceivedheaders', body_file,
+                                      control_files)
     mmsg = mfilter.getMessage()
     del mmsg['Received']
-    submitVal = mfilter.submit()
-    return submitVal
+    submit_val = mfilter.submit()
+    return submit_val
 
 
 if __name__ == '__main__':
     # For debugging, you can create a file that contains a message,
     # including the headers.
     if not sys.argv[1:]:
-        print 'Use:  noreceivedheaders.py <control file>'
+        print('Use:  noreceivedheaders.py <control file>')
         sys.exit(1)
-    initFilter()
+    init_filter()
     courier.xfilter.XFilter = courier.xfilter.DummyXFilter
-    print doFilter(sys.argv[1], [])
+    print(do_filter(sys.argv[1], []))
