@@ -25,31 +25,32 @@ import sys
 import time
 import courier.config
 import courier.control
-import TtlDb
+from . import TtlDb
 
 
 # The good/bad senders lists will be scrubbed at the interval indicated,
-# in seconds, by the sendersPurgeInterval setting.  Any triplets which
+# in seconds, by the senders_purge_interval setting.  Any triplets which
 # haven't successfully passed a message will be purged at the age
-# indicated by sendersNotPassedTTL.  Any triplets which have passed a
-# message will be purged at the age indicated by sendersPassedTTL, and
+# indicated by senders_not_passed_ttl.  Any triplets which have passed a
+# message will be purged at the age indicated by senders_passed_ttl, and
 # will have to prove themselves again.  A triplet must be at as old as
-# greylistTime to be accepted.
-sendersPurgeInterval = 60 * 60 * 2
-sendersPassedTTL = 60 * 60 * 24 * 36
-sendersNotPassedTTL = 60 * 60 * 24
-greylistTime = 300
+# greylist_time to be accepted.
+senders_purge_interval = 60 * 60 * 2
+senders_passed_ttl = 60 * 60 * 24 * 36
+senders_not_passed_ttl = 60 * 60 * 24
+greylist_time = 300
 
 
-def initFilter():
-    courier.config.applyModuleConfig('greylist.py', globals())
+def init_filter():
+    courier.config.apply_module_config('greylist.py', globals())
     # Keep a dictionary of sender/recipient/IP triplets that we've seen before
     try:
-        global _sendersPassed
-        global _sendersNotPassed
-        _sendersPassed = TtlDb.TtlDb('greylist_Passed', sendersPassedTTL, sendersPurgeInterval)
-        _sendersNotPassed = TtlDb.TtlDb('greylist_NotPassed', sendersNotPassedTTL, sendersPurgeInterval)
-    except TtlDb.OpenError, e:
+        global _senders_passed
+        global _senders_not_passed
+        _senders_passed = TtlDb.TtlDb('greylist_Passed', senders_passed_ttl, senders_purge_interval)
+        _senders_not_passed = TtlDb.TtlDb('greylist_NotPassed',
+                                          senders_not_passed_ttl, senders_purge_interval)
+    except TtlDb.OpenError as e:
         sys.stderr.write('Could not open greylist TtlDb: %s\n' % e)
         sys.exit(1)
 
@@ -57,7 +58,7 @@ def initFilter():
     sys.stderr.write('Initialized the "greylist" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Return a temporary failure message if this sender hasn't tried to
     deliver mail previously.
 
@@ -73,17 +74,17 @@ def doFilter(bodyFile, controlFileList):
 
     """
 
-    sendersIP = ipaddress.ip_address(unicode(courier.control.getSendersIP(controlFileList))).exploded
-    if '.' in sendersIP:
+    senders_ip = ipaddress.ip_address(courier.control.get_senders_ip(control_files)).exploded
+    if '.' in senders_ip:
         # For IPv4, use the first three octets
-        sendersIPNetwork = sendersIP[:sendersIP.rindex('.')]
+        senders_ip_network = senders_ip[:senders_ip.rindex('.')]
     else:
         # For IPv6, use the first three hextets
-        sendersIPNetwork = sendersIP[:14]
+        senders_ip_network = senders_ip[:14]
 
     # Grab the sender from the control files.
     try:
-        sender = courier.control.getSender(controlFileList)
+        sender = courier.control.get_sender(control_files)
     except:
         return '451 Internal failure locating control files'
     if sender == '':
@@ -91,63 +92,63 @@ def doFilter(bodyFile, controlFileList):
         return ''
     sender = sender.lower()
 
-    _sendersPassed.purge()
-    _sendersNotPassed.purge()
+    _senders_passed.purge()
+    _senders_not_passed.purge()
 
     # Create a new MD5 object.  The sender/recipient/IP triplets will
     # be stored in the db in the form of an MD5 digest.
-    senderMd5 = hashlib.md5(sender)
+    sender_md5 = hashlib.md5(sender)
 
     # Create a digest for each triplet and look it up first in the
-    # _sendersNotPassed db.  If it's found there, but is not old
-    # enough to meet greylistTime, save the minimum amount of time
+    # _senders_not_passed db.  If it's found there, but is not old
+    # enough to meet greylist_time, save the minimum amount of time
     # the sender must wait before retrying for the error message that
     # we'll return.  If it is old enough, remove the digest from
-    # _sendersNotPassed db, and save it in the _sendersPassed db.
-    # Then, check for the triplet in _sendersPassed db, and update
+    # _senders_not_passed db, and save it in the _senders_passed db.
+    # Then, check for the triplet in _senders_passed db, and update
     # its time value if found.  If the triplet isn't found in the
-    # _sendersPassed db, then create a new entry in the
-    # _sendersNotPassed db, and save the minimum wait time.
-    foundAll = 1
-    biggestTimeToGo = 0
+    # _senders_passed db, then create a new entry in the
+    # _senders_not_passed db, and save the minimum wait time.
+    found_all = 1
+    biggest_time_to_go = 0
 
-    for recipient in courier.control.getRecipients(controlFileList):
+    for recipient in courier.control.get_recipients(control_files):
         recipient = recipient.lower()
 
-        correspondents = senderMd5.copy()
+        correspondents = sender_md5.copy()
         correspondents.update(recipient)
-        correspondents.update(sendersIPNetwork)
+        correspondents.update(senders_ip_network)
         cdigest = correspondents.hexdigest()
-        _sendersPassed.lock()
-        _sendersNotPassed.lock()
+        _senders_passed.lock()
+        _senders_not_passed.lock()
         try:
-            if cdigest in _sendersNotPassed:
-                firstTimestamp = float(_sendersNotPassed[cdigest])
-                timeToGo = firstTimestamp + greylistTime - time.time()
-                if timeToGo > 0:
+            if cdigest in _senders_not_passed:
+                first_timestamp = float(_senders_not_passed[cdigest])
+                time_to_go = first_timestamp + greylist_time - time.time()
+                if time_to_go > 0:
                     # The sender needs to wait longer before this delivery is allowed.
-                    foundAll = 0
-                    if timeToGo > biggestTimeToGo:
-                        biggestTimeToGo = timeToGo
+                    found_all = 0
+                    if time_to_go > biggest_time_to_go:
+                        biggest_time_to_go = time_to_go
                 else:
-                    _sendersPassed[cdigest] = time.time()
-                    del(_sendersNotPassed[cdigest])
-            elif cdigest in _sendersPassed:
-                _sendersPassed[cdigest] = time.time()
+                    _senders_passed[cdigest] = time.time()
+                    del _senders_not_passed[cdigest]
+            elif cdigest in _senders_passed:
+                _senders_passed[cdigest] = time.time()
             else:
-                foundAll = 0
-                timeToGo = greylistTime
-                if timeToGo > biggestTimeToGo:
-                    biggestTimeToGo = timeToGo
-                _sendersNotPassed[cdigest] = time.time()
+                found_all = 0
+                time_to_go = greylist_time
+                if time_to_go > biggest_time_to_go:
+                    biggest_time_to_go = time_to_go
+                _senders_not_passed[cdigest] = time.time()
         finally:
-            _sendersNotPassed.unlock()
-            _sendersPassed.unlock()
+            _senders_not_passed.unlock()
+            _senders_passed.unlock()
 
-    if foundAll:
+    if found_all:
         return ''
-    else:
-        return('451 4.7.1 Greylisting in action, please come back in %s' % time.strftime("%H:%M:%S", time.gmtime(biggestTimeToGo)))
+    return '451 4.7.1 Greylisting in action, please come back in %s' % \
+        time.strftime("%H:%M:%S", time.gmtime(biggest_time_to_go))
 
 
 if __name__ == '__main__':
@@ -157,7 +158,7 @@ if __name__ == '__main__':
     # recipient.  Run this script with the name of that file as an
     # argument, and it'll validate that email address.
     if not sys.argv[1:]:
-        print 'Use: greylist.py <control file>'
+        print('Use: greylist.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter('', sys.argv[1:])
+    init_filter()
+    print(do_filter('', sys.argv[1:]))
