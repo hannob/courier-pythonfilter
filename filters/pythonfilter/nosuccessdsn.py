@@ -21,13 +21,13 @@ import sys
 import courier.control
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "nosuccessdsn" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
-    """Remove success DSNs from the controlFileList
+def do_filter(body_file, control_files):
+    """Remove success DSNs from the control_files
 
     Success DSNs are requested by some spammers with invalid return
     addresses.  Why?  I don't know.
@@ -37,13 +37,13 @@ def doFilter(bodyFile, controlFileList):
     deliveries.  If so, enable this filter.
 
     """
-    rcpts = courier.control.getRecipientsData(controlFileList)
+    rcpts = courier.control.get_recipients_data(control_files)
     for x in rcpts:
         if 'S' in x[2]:
             newrcpt = x[:]
             newrcpt[2] = ''
-            courier.control.addRecipientData(controlFileList, newrcpt)
-            courier.control.delRecipientData(controlFileList, x)
+            courier.control.add_recipient_data(control_files, newrcpt)
+            courier.control.del_recipient_data(control_files, x)
     # Return no decision.
     return ''
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # Run this script with the name of those files as arguments,
     # and it'll rewrite them with no success DSNs.
     if not sys.argv[1:]:
-        print 'Use:  nosuccessdsn.py <control file>'
+        print('Use:  nosuccessdsn.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter('', sys.argv[1:])
+    init_filter()
+    print(do_filter('', sys.argv[1:]))
