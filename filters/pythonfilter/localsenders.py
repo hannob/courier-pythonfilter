@@ -23,37 +23,37 @@ import courier.config
 import courier.control
 
 
-requireAuth = False
+require_auth = False
 
 
-def initFilter():
-    courier.config.applyModuleConfig('localsenders.py', globals())
+def init_filter():
+    courier.config.apply_module_config('localsenders.py', globals())
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "localsenders" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Validate sender addresses, if their domain is locally hosted."""
     try:
-        sender = courier.control.getSender(controlFileList)
+        sender = courier.control.get_sender(control_files)
     except:
         return '451 Internal failure locating control files'
     sparts = sender.split('@')
     if len(sparts) != 2:
         return ''
 
-    if courier.config.isLocal(sparts[1]):
-        senderInfo = courier.authdaemon.getUserInfo('smtp', sparts[0])
-    elif courier.config.isHosteddomain(sparts[1]):
-        senderInfo = courier.authdaemon.getUserInfo('smtp', sender)
+    if courier.config.is_local(sparts[1]):
+        sender_info = courier.authdaemon.get_user_info('smtp', sparts[0])
+    elif courier.config.is_hosteddomain(sparts[1]):
+        sender_info = courier.authdaemon.get_user_info('smtp', sender)
     else:
         # Short circuit return for non-local senders
         return ''
 
-    if senderInfo is None:
+    if sender_info is None:
         return '517 Sender does not exist: %s' % sender
-    if(requireAuth and
-       courier.control.getAuthUser(controlFileList, bodyFile) is None):
+    if(require_auth and
+       courier.control.get_auth_user(control_files, body_file) is None):
         return '517 Policy requires local senders to authenticate.'
     return ''
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     # For debugging, you can create a file or set of files that
     # mimics the Courier control file set.
     if not sys.argv[1:]:
-        print 'Use:  localsenders.py <control file>'
+        print('Use:  localsenders.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter('', sys.argv[1])
+    init_filter()
+    print(do_filter('', sys.argv[1]))
