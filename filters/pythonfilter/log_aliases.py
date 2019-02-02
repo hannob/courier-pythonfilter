@@ -21,15 +21,15 @@ import sys
 import courier.control
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "log_aliases" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
-    for addr in courier.control.getRecipientsData(controlFileList):
+def do_filter(body_file, control_files):
+    for addr in courier.control.get_recipients_data(control_files):
         if addr[1]:
-            if(addr[1].startswith('rfc822;')):
+            if addr[1].startswith('rfc822;'):
                 addr[1] = addr[1][7:]
             sys.stderr.write('Message delivered to %s was originally addressed to %s.\n' %
                              (addr[0], addr[1]))
