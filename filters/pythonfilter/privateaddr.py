@@ -27,24 +27,24 @@ import courier.control
 # mail from listed senders.  The key name should be the private
 # address; the value should be a list of regexes which match
 # approved senders.
-private_rcpts = { 'help@ee.washington.edu': ['[^@]*@.*washington.edu'],
-                  'webmaster@ee.washington.edu': ['[^@]*@.*washington.edu'],
-                  'msdn@ee.washington.edu': ['[^@]*@.*washington.edu'],
-                  'researchhelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
-                  'desktophelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
-                  'securityhelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
-                  'gnlhelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
-                  'memshelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
-                  'compstudenthelp@ee.washington.edu': ['[^@]*@.*washington.edu'] }
+private_rcpts = {'help@ee.washington.edu': ['[^@]*@.*washington.edu'],
+                 'webmaster@ee.washington.edu': ['[^@]*@.*washington.edu'],
+                 'msdn@ee.washington.edu': ['[^@]*@.*washington.edu'],
+                 'researchhelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
+                 'desktophelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
+                 'securityhelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
+                 'gnlhelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
+                 'memshelp@ee.washington.edu': ['[^@]*@.*washington.edu'],
+                 'compstudenthelp@ee.washington.edu': ['[^@]*@.*washington.edu']}
 
 
-def initFilter():
-    courier.config.applyModuleConfig('privateaddr.py', globals())
+def init_filter():
+    courier.config.apply_module_config('privateaddr.py', globals())
 
     # Avoid recompiling REs on each run by compiling them here:
     global _private_re
     _private_re = {}
-    for x in private_rcpts.keys():
+    for x in private_rcpts:
         for y in private_rcpts[x]:
             _private_re[y] = re.compile(y)
 
@@ -52,11 +52,11 @@ def initFilter():
     sys.stderr.write('Initialized the "privateaddr" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Refuse mail if recipient is private, and sender is not approved."""
-    for addr in courier.control.getRecipientsData(controlFileList):
+    for addr in courier.control.get_recipients_data(control_files):
         if addr[1]:
-            if(addr[1].startswith('rfc822;')):
+            if addr[1].startswith('rfc822;'):
                 rcpt = addr[1][7:]
             else:
                 rcpt = addr[1]
@@ -65,13 +65,13 @@ def doFilter(bodyFile, controlFileList):
         if courier.config.locallowercase():
             rcpt = rcpt.lower()
         if rcpt in private_rcpts:
-            senderAllowed = 0
-            sender = courier.control.getSender(controlFileList)
+            sender_allowed = 0
+            sender = courier.control.get_sender(control_files)
             for pattern in private_rcpts[rcpt]:
                 if _private_re[pattern].match(sender):
-                    senderAllowed = 1
-            if senderAllowed == 0:
+                    sender_allowed = 1
+            if sender_allowed == 0:
                 sys.stderr.write('Message to %s from %s refused by privateaddr.py\n' %
-                                 (rcpt, sender) )
+                                 (rcpt, sender))
                 return '517 Sender is not allowed by privacy settings.'
     return ''
