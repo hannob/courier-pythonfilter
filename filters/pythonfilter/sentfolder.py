@@ -28,59 +28,60 @@ import courier.sendmail
 siteid = '69f7dc20-7aef-420b-a8d2-85ea229f97ba'
 
 
-def initFilter():
-    courier.config.applyModuleConfig('sentfolder.py', globals())
+def init_filter():
+    courier.config.apply_module_config('sentfolder.py', globals())
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "sentfolder" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
-    sender = courier.control.getAuthUser(controlFileList, bodyFile)
+def do_filter(body_file, control_files):
+    sender = courier.control.get_auth_user(control_files, body_file)
     if not sender:
         return ''
 
     if '@' not in sender:
         sender = '%s@%s' % (sender, courier.config.me())
-    courier.sendmail.sendmail('', sender, makemsg(bodyFile, controlFileList))
+    courier.sendmail.sendmail('', sender, makemsg(body_file, control_files))
 
     return ''
 
 
-def makemsg(bodyFile, controlFileList):
-    yield ('X-Deliver-To-Sent-Folder: ' + siteid + '\r\n')
+def makemsg(body_file, control_files):
+    yield 'X-Deliver-To-Sent-Folder: ' + siteid + '\r\n'
 
     try:
-        bfStream = open(bodyFile)
+        bf_stream = open(body_file)
     except:
-        raise InitError('Internal failure opening message data file')
+        raise SystemError('Internal failure opening message data file')
     try:
-        msg = email.message_from_file(bfStream)
-    except Exception, e:
-        raise InitError('Internal failure parsing message data file: %s' % str(e))
+        msg = email.message_from_file(bf_stream)
+    except Exception as e:
+        raise SystemError('Internal failure parsing message data file: %s' % str(e))
     tos = msg.get_all('to', [])
     ccs = msg.get_all('cc', [])
     resent_tos = msg.get_all('resent-to', [])
     resent_ccs = msg.get_all('resent-cc', [])
     all_recipients = [x[1] for x in email.utils.getaddresses(tos + ccs + resent_tos + resent_ccs)]
     bccs = []
-    for recipient in courier.control.getRecipientsData(controlFileList):
+    for recipient in courier.control.get_recipients_data(control_files):
         if recipient[1]:
             r = recipient[1]
         else:
             r = recipient[0]
         if (r not in all_recipients and
-            r not in bccs):
+                r not in bccs):
             bccs.append(r)
     if bccs:
-        yield ('Bcc: ' + ', '.join(bccs) + '\r\n')
+        yield 'Bcc: ' + ', '.join(bccs) + '\r\n'
 
-    bfStream = open(bodyFile)
-    for line in bfStream: yield line
+    bf_stream = open(body_file)
+    for line in bf_stream:
+        yield line
 
 
 if __name__ == '__main__':
-    if not len(sys.argv) == 2:
-        print "Usage: sentfolder.py <body file>"
+    if len(sys.argv) != 2:
+        print("Usage: sentfolder.py <body file>")
         sys.exit(1)
-    initFilter()
-    print doFilter(sys.argv[1], [])
+    init_filter()
+    print(do_filter(sys.argv[1], []))
