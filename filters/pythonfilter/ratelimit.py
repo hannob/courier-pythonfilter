@@ -19,76 +19,76 @@
 
 import ipaddress
 import sys
-import thread
 import time
+import _thread
 import courier.control
 import courier.config
 
 
 # The rate is measured in messages / interval in minutes
-maxConnections = 60
+max_connections = 60
 interval = 1
 
 # The senders lists will be scrubbed at the interval indicated in
 # seconds.  All records older than the "interval" number of minutes
 # will be removed from the lists.
-sendersPurgeInterval = 60 * 60 * 12
+senders_purge_interval = 60 * 60 * 12
 
 # Throttle based on IPv4 /24 or IPv6 /48 network rather than an
 # individual address.
-limitNetwork = False
+limit_network = False
 
-def initFilter():
-    courier.config.applyModuleConfig('ratelimit.py', globals())
+def init_filter():
+    courier.config.apply_module_config('ratelimit.py', globals())
 
     # Keep a dictionary of authenticated senders to avoid more work than
     # required.
-    global _sendersLock
+    global _senders_lock
     global _senders
-    global _sendersLastPurged
-    _sendersLock = thread.allocate_lock()
+    global _senders_last_purged
+    _senders_lock = _thread.allocate_lock()
     _senders = {}
-    _sendersLastPurged    = 0
+    _senders_last_purged = 0
 
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the ratelimit python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Track the number of connections from each IP and temporarily fail
     if there have been too many."""
 
-    global _sendersLastPurged
+    global _senders_last_purged
 
     try:
-        sender = courier.control.getSendersIP(controlFileList)
-        # limitNetwork might mangle "sender," so save a copy
+        sender = courier.control.get_senders_ip(control_files)
+        # limit_network might mangle "sender," so save a copy
         esender = sender
     except:
         return '451 Internal failure locating control files'
 
-    if limitNetwork:
+    if limit_network:
         if '.' in sender:
             # For IPv4, use the first three octets
             sender = sender[:sender.rindex('.')]
         else:
             # For IPv6, expand the address and then use the first three hextets
-            sender = ipaddress.ip_address(unicode(sender)).exploded[:14]
+            sender = ipaddress.ip_address(sender).exploded[:14]
 
-    _sendersLock.acquire()
+    _senders_lock.acquire()
     try:
         now = int(time.time() / 60)
 
         # Scrub the lists if it is time to do so.
-        if now > (_sendersLastPurged + (sendersPurgeInterval / 60)):
-            minAge = now - interval
-            for age in _senders.keys():
-                if age < minAge:
+        if now > (_senders_last_purged + (senders_purge_interval / 60)):
+            min_age = now - interval
+            for age in list(_senders.keys()):
+                if age < min_age:
                     del _senders[age]
-            _sendersLastPurged = now
+            _senders_last_purged = now
 
         # First, add this connection to the bucket:
-        if not now in _senders:
+        if now not in _senders:
             _senders[now] = {}
         if not sender in _senders[now]:
             _senders[now][sender] = 1
@@ -101,13 +101,13 @@ def doFilter(bodyFile, controlFileList):
             if (now - i) in _senders and sender in _senders[now - i]:
                 connections = connections + _senders[now - i][sender]
 
-        # If the connection count is higher than the maxConnections setting,
+        # If the connection count is higher than the max_connections setting,
         # return a soft failure.
-        if connections > maxConnections:
+        if connections > max_connections:
             status = '421 Too many messages from %s, slow down.' % esender
         else:
             status = ''
     finally:
-        _sendersLock.release()
+        _senders_lock.release()
 
     return status
