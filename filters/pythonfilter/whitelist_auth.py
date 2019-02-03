@@ -17,16 +17,16 @@
 # You should have received a copy of the GNU General Public License
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
-import courier.control
 import sys
+import courier.control
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "whitelist_auth" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Return a 200 code if the sender appears to have authenticated.
 
     Courier does not currently contain this information in its control
@@ -38,12 +38,11 @@ def doFilter(bodyFile, controlFileList):
 
     """
 
-    authUser = courier.control.getAuthUser(controlFileList, bodyFile)
-    if authUser:
+    auth_user = courier.control.get_auth_user(control_files, body_file)
+    if auth_user:
         return '200 Ok'
-    else:
-        # Return no decision for everyone else.
-        return ''
+    # Return no decision for everyone else.
+    return ''
 
 
 if __name__ == '__main__':
@@ -54,7 +53,7 @@ if __name__ == '__main__':
     # is whitelisted, or nothing to indicate that the remaining
     # filters would be run.
     if not sys.argv[1:]:
-        print 'Use:  whitelist_auth.py <control file>'
+        print('Use:  whitelist_auth.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter(sys.argv[1], [])
+    init_filter()
+    print(do_filter(sys.argv[1], []))
