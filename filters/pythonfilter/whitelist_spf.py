@@ -22,17 +22,17 @@ import courier.control
 import spf
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the whitelist_spf python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Use the SPF mechanism to whitelist email."""
     try:
-        sendersMta = courier.control.getSendersMta(controlFileList)
-        sendersIp = courier.control.getSendersIP(controlFileList)
-        sender = courier.control.getSender(controlFileList)
+        senders_mta = courier.control.get_senders_mta(control_files)
+        senders_ip = courier.control.get_senders_ip(control_files)
+        sender = courier.control.get_sender(control_files)
     except:
         return '451 Internal failure locating control files'
 
@@ -40,9 +40,9 @@ def doFilter(bodyFile, controlFileList):
     if sender == '':
         return ''
 
-    helo = sendersMta.split(' ')[1]
-    (spfResult, spfExplanation) = spf.check2(sendersIp, sender, helo)
-    if spfResult == 'pass':
+    helo = senders_mta.split(' ')[1]
+    (spf_result, spf_explanation) = spf.check2(senders_ip, sender, helo)
+    if spf_result == 'pass':
         return '200 Ok'
     return ''
 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     # indicate that the sender is whitelisted, or nothing to
     # indicate that the remaining filters would be run.
     if not sys.argv[1:]:
-        print 'Use:  whitelist_spf.py <control file>'
+        print('Use:  whitelist_spf.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter('', sys.argv[1:])
+    init_filter()
+    print(do_filter('', sys.argv[1:]))
