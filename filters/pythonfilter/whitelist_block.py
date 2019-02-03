@@ -22,14 +22,14 @@ import courier.control
 import courier.config
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "whitelist_block" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Whitelist messages based on smtpaccess.dat.
-    
+
     The smtpaccess.dat file is checked for a BLOCK value.  If one
     is found with an empty value, a 200 code will be returned.
     After returning a 200 code, the pythonfilter process will
@@ -38,11 +38,11 @@ def doFilter(bodyFile, controlFileList):
     """
 
     try:
-        sendersIP = courier.control.getSendersIP(controlFileList)
+        senders_ip = courier.control.get_senders_ip(control_files)
     except:
         return '451 Internal failure locating control files'
 
-    if sendersIP and courier.config.getSmtpaccessVal('BLOCK', sendersIP) == '':
+    if senders_ip and courier.config.get_smtpaccess_val('BLOCK', senders_ip) == '':
         return '200 Ok'
 
     # Return no decision for everyone else.
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     # is whitelisted, or nothing to indicate that the remaining
     # filters would be run.
     if not sys.argv[1:]:
-        print 'Use:  whitelist_block.py <control file>'
+        print('Use:  whitelist_block.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter('', sys.argv[1:])
+    init_filter()
+    print(do_filter('', sys.argv[1:]))
