@@ -24,68 +24,68 @@ import courier.config
 import courier.control
 
 
-def _parsequota(quota):
+def parse_quota(quota):
     size = 0
     messages = 0
-    qbits = [ x.strip() for x in quota.split(',') ]
+    qbits = [x.strip() for x in quota.split(',')]
     for qbit in qbits:
         if qbit[-1] == 'S':
-            size = long(qbit[:-1])
+            size = int(qbit[:-1])
         elif qbit[-1] == 'C':
-            messages = long(qbit[:-1])
+            messages = int(qbit[:-1])
         else:
             raise ValueError('quota string "%s" not parseable' % quota)
     return (size, messages)
 
 
-def _checkQuota(addr):
-    userInfo = courier.authdaemon.getUserInfo('smtp', addr)
-    if userInfo is None:
+def check_quota(addr):
+    user_info = courier.authdaemon.get_user_info('smtp', addr)
+    if user_info is None:
         # shouldn't happen if addr is local or hosted, and
         # courier accepted the address
         sys.stderr.write('quota filter: authdaemon failed to look up "%s"\n' % addr)
         return ''
-    if 'MAILDIR' in userInfo:
-        maildirsize = os.path.join(userInfo['MAILDIR'], 'maildirsize')
+    if 'MAILDIR' in user_info:
+        maildirsize = os.path.join(user_info['MAILDIR'], 'maildirsize')
     else:
-        maildirsize = os.path.join(userInfo['HOME'], 'Maildir', 'maildirsize')
+        maildirsize = os.path.join(user_info['HOME'], 'Maildir', 'maildirsize')
     try:
-        sizeFile = open(maildirsize, 'r')
-        (quotaSize, quotaCount) = _parsequota(sizeFile.readline())
-        mailSize = 0
-        mailCount = 0
-        quotaLine = sizeFile.readline()
-        while quotaLine:
-            (lineSize, lineCount) = quotaLine.strip().split()
-            mailSize += long(lineSize)
-            mailCount += long(lineCount)
-            quotaLine = sizeFile.readline()
-        if ((quotaSize and mailSize >= quotaSize)
-            or (quotaCount and mailCount >= quotaCount)):
+        size_file = open(maildirsize, 'r')
+        (quota_size, quota_count) = parse_quota(size_file.readline())
+        mail_size = 0
+        mail_count = 0
+        quota_line = size_file.readline()
+        while quota_line:
+            (line_size, line_count) = quota_line.strip().split()
+            mail_size += int(line_size)
+            mail_count += int(line_count)
+            quota_line = size_file.readline()
+        if ((quota_size and mail_size >= quota_size)
+                or (quota_count and mail_count >= quota_count)):
             return 'User "%s" is over quota' % addr
     except:
         return ''
     return ''
 
 
-def initFilter():
+def init_filter():
     # Record in the system log that this filter was initialized.
     sys.stderr.write('Initialized the "quota" python filter\n')
 
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Reject mail if any recipient is over quota"""
-    rcpts = courier.control.getRecipientsData(controlFileList)
+    rcpts = courier.control.get_recipients_data(control_files)
     for x in rcpts:
         (user, domain) = x[0].split('@', 1)
-        if courier.config.isLocal(domain):
-            quotaError = _checkQuota(user)
-            if quotaError:
-                return '421 %s' % quotaError
-        elif courier.config.isHosteddomain(domain):
-            quotaError = _checkQuota(x[0])
-            if quotaError:
-                return '421 %s' % quotaError
+        if courier.config.is_local(domain):
+            quota_error = check_quota(user)
+            if quota_error:
+                return '421 %s' % quota_error
+        elif courier.config.is_hosteddomain(domain):
+            quota_error = check_quota(x[0])
+            if quota_error:
+                return '421 %s' % quota_error
     return ''
 
 
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     # Run this script with the name of those files as arguments,
     # and it'll check each recipient's quota.
     if not sys.argv[1:]:
-        print 'Use:  quota.py <control file>'
+        print('Use:  quota.py <control file>')
         sys.exit(1)
-    initFilter()
-    print doFilter('', sys.argv[1:])
+    init_filter()
+    print(do_filter('', sys.argv[1:]))
