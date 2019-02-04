@@ -25,7 +25,7 @@ import sys
 import time
 import courier.config
 import courier.control
-from . import TtlDb
+from . import ttldb
 
 
 # The good/bad senders lists will be scrubbed at the interval indicated,
@@ -47,10 +47,10 @@ def init_filter():
     try:
         global _senders_passed
         global _senders_not_passed
-        _senders_passed = TtlDb.TtlDb('greylist_Passed', senders_passed_ttl, senders_purge_interval)
-        _senders_not_passed = TtlDb.TtlDb('greylist_NotPassed',
+        _senders_passed = ttldb.TtlDb('greylist_Passed', senders_passed_ttl, senders_purge_interval)
+        _senders_not_passed = ttldb.TtlDb('greylist_NotPassed',
                                           senders_not_passed_ttl, senders_purge_interval)
-    except TtlDb.OpenError as e:
+    except ttldb.OpenError as e:
         sys.stderr.write('Could not open greylist TtlDb: %s\n' % e)
         sys.exit(1)
 

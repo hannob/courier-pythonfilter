@@ -24,7 +24,7 @@ import sys
 import time
 import DNS
 import courier.config
-from . import TtlDb
+from . import ttldb
 
 
 # The good/bad senders lists will be scrubbed at the interval indicated
@@ -51,9 +51,9 @@ def init_filter():
     try:
         global _good_senders
         global _bad_senders
-        _good_senders = TtlDb.TtlDb('goodsenders', senders_ttl, senders_purge_interval)
-        _bad_senders = TtlDb.TtlDb('badsenders', senders_ttl, senders_purge_interval)
-    except TtlDb.OpenError as e:
+        _good_senders = ttldb.TtlDb('goodsenders', senders_ttl, senders_purge_interval)
+        _bad_senders = ttldb.TtlDb('badsenders', senders_ttl, senders_purge_interval)
+    except ttldb.OpenError as e:
         sys.stderr.write('Could not open dialback TtlDb: %s\n' % e)
         sys.exit(1)
     # Initialize the DNS module

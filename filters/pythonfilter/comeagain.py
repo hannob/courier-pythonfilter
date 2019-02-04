@@ -22,7 +22,7 @@ import sys
 import time
 import courier.config
 import courier.control
-from . import TtlDb
+from . import ttldb
 
 
 # The good/bad senders lists will be scrubbed at the interval indicated
@@ -37,8 +37,8 @@ def init_filter():
     # Keep a dictionary of sender/recipient pairs that we've seen before
     try:
         global _senders
-        _senders = TtlDb.TtlDb('correspondents', senders_ttl, senders_purge_interval)
-    except TtlDb.OpenError as e:
+        _senders = ttldb.TtlDb('correspondents', senders_ttl, senders_purge_interval)
+    except ttldb.OpenError as e:
         sys.stderr.write('Could not open comeagain TtlDb: %s\n' % e)
         sys.exit(1)
     # Record in the system log that this filter was initialized.

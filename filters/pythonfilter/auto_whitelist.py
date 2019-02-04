@@ -22,7 +22,7 @@ import sys
 import time
 import courier.config
 import courier.control
-from . import TtlDb
+from . import ttldb
 
 
 # The good/bad senders lists will be scrubbed at the interval indicated
@@ -37,8 +37,8 @@ def init_filter():
     # Keep a dictionary of sender/recipient pairs that we've seen before
     try:
         global _whitelist
-        _whitelist = TtlDb.TtlDb('auto_whitelist', whitelist_ttl, whitelist_purge_interval)
-    except TtlDb.OpenError as e:
+        _whitelist = ttldb.TtlDb('auto_whitelist', whitelist_ttl, whitelist_purge_interval)
+    except ttldb.OpenError as e:
         sys.stderr.write('Could not open auto_whitelist TtlDb: %s\n' % e)
         sys.exit(1)
     # Record in the system log that this filter was initialized.
