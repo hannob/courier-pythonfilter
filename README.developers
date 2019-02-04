@@ -20,16 +20,16 @@ message to stderr.  e.g.:
   sys.stderr.write('Initialized the foo python filter\n')
 
 Filters may have as many functions as required, but they must provide
-at least one function, called "doFilter", declared as:
+at least one function, called "do_filter", declared as:
 
-  def doFilter(bodyFile, controlFileList):
+  def do_filter(body_file, control_files):
      ...
 
-The bodyFile argument will be the path to the file containing the
+The body_file argument will be the path to the file containing the
 message body.  Courier does not allow you to modify this file, but you
 may read it or give it to Python's email classes for information.
 
-The controlFileList argument will be a list of paths to the message's
+The control_files argument will be a list of paths to the message's
 control files.
 
 This function will be called to filter each incoming message.  The
@@ -58,20 +58,22 @@ strings.  Valid return values are:
   immediately, indicating to them that the message was either temporarily
   or permanently rejected.  Courier will then drop this message.
 
-Filters may also provide a function called "initFilter", declared as:
+Filters may also provide a function called "init_filter", declared as:
 
-  def initFilter():
+  def init_filter():
      ...
 
 This function may configure the module in any way necessary.  It will
-usually call the applyModuleConfig function in the courier.config module,
-and write a message to stderr, indicating that it has been initialized.
+usually call the apply_module_config function in the courier.config
+module, and write a message to stderr, indicating that it has been
+initialized.
 
-Each filter's doFilter function is run in a thread.  Take care to ensure
-that your filter is thread safe when writing them.  If you modify global
-variables in your functions, you should protect them with a mutex.  Take
-care as well to verify that your resources are cleaned up properly.
-Resource leaks can spring up, and will lead to Courier rejecting mail.
+Each filter's do_filter function is run in a thread.  Take care to
+ensure that your filter is thread safe when writing them.  If you
+modify global variables in your functions, you should protect them
+with a mutex.  Take care as well to verify that your resources are
+cleaned up properly.  Resource leaks can spring up, and will lead to
+Courier rejecting mail.
 
 I recommend this construct where ever mutexes are used:
 
@@ -324,7 +326,7 @@ get_auth_user(control_files, body_file=None)
 
 courier.xfilter:
 
-class XFilter(filterName, bodyFile, controlFileList)
+class XFilter(filterName, body_file, control_files)
     Modify messages in the Courier spool.
 
     This class will load a specified message from Courier's spool and
@@ -336,8 +338,8 @@ class XFilter(filterName, bodyFile, controlFileList)
 
     Arguments:
     filter_name -- a name identifying the filter calling this class
-    body_file -- the same argument given to the doFilter function
-    control_files -- the same argument given to the doFilter function
+    body_file -- the same argument given to the do_filter function
+    control_files -- the same argument given to the do_filter function
 
     The class will raise xfilter.InitError when instantiated if it
     cannot open the body_file or any of the control files.
@@ -362,7 +364,7 @@ import courier.xfilter
 # Record in the system log that this filter was initialized.
 sys.stderr.write('Initialized the "testxfilter" python filter\n')
 
-def doFilter(bodyFile, controlFileList):
+def do_filter(body_file, control_files):
     """Add a new header to incoming mail."""
     mfilter = courier.xfilter.XFilter('testxfilter', body_file,
                                       control_files)
