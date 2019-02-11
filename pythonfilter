@@ -268,12 +268,12 @@ def process_message(active_socket, filters, active_filters):
             reply_code = i_filter[1](body_file, control_files)
         except Exception:
             filter_error = sys.exc_info()
-            sys.stderr.write('Uncaught exception in "%s" doFilter function: %s:%s\n' %
+            sys.stderr.write('Uncaught exception in "%s" do_filter function: %s:%s\n' %
                              (i_filter[0], filter_error[0], filter_error[1]))
             sys.stderr.write(''.join(traceback.format_tb(filter_error[2])))
             reply_code = ''
         if not isinstance(reply_code, str):
-            sys.stderr.write('"%s" doFilter function returned non-string\n' % i_filter[0])
+            sys.stderr.write('"%s" do_filter function returned non-string\n' % i_filter[0])
             reply_code = ''
         if reply_code != '':
             if i_filter[2] and reply_code[0] == '2':
@@ -289,7 +289,9 @@ def process_message(active_socket, filters, active_filters):
     else:
         active_socket.send(reply_code.encode())
         log_file_codes(i_filter[0], reply_code, control_files)
+    active_socket.close()
     active_filters.dec()
+    sys.stderr.flush()
 
 
 def log_file_codes(module, reply_code, control_files):
@@ -352,6 +354,7 @@ def main():
     ##############################
     active_filters = LockedCounter()
     filters = load_filters()
+    sys.stderr.flush()
     (filter_socket, filter_socket_path) = create_socket()
 
     # Close fd 3 to notify courierfilter that initialization is complete
