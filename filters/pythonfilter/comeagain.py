@@ -71,7 +71,7 @@ def do_filter(body_file, control_files):
 
     # Create a new MD5 object.  The pairs of sender/recipient will
     # be stored in the db in the form of an MD5 digest.
-    sender_md5 = hashlib.md5(sender)
+    sender_md5 = hashlib.md5(sender.encode())
 
     # Create a digest for each recipient and look it up in the db.
     # Update the timestamp of each pair as we look them up.  If any
@@ -82,7 +82,7 @@ def do_filter(body_file, control_files):
     try:
         for recipient in courier.control.get_recipients(control_files):
             correspondents = sender_md5.copy()
-            correspondents.update(recipient)
+            correspondents.update(recipient.encode())
             cdigest = correspondents.hexdigest()
             if not cdigest in _senders:
                 found_all = 0

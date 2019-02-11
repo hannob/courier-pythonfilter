@@ -78,7 +78,7 @@ def do_filter(body_file, control_files):
     if sender == '':
         # Null sender is allowed as a non-fatal error
         return ''
-    sender_md5 = hashlib.md5(sender).hexdigest()
+    sender_md5 = hashlib.md5(sender.encode()).hexdigest()
 
     _good_senders.purge()
     _bad_senders.purge()

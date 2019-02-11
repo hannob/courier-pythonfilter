@@ -47,7 +47,7 @@ def init_filter():
 
 def whitelist_recipients(control_files):
     sender = courier.control.get_sender(control_files).lower()
-    sender_md5 = hashlib.md5(sender)
+    sender_md5 = hashlib.md5(sender.encode())
     _whitelist.lock()
     try:
         for recipient in courier.control.get_recipients(control_files):
@@ -58,7 +58,7 @@ def whitelist_recipients(control_files):
             if recipient == sender:
                 continue
             correspondents = sender_md5.copy()
-            correspondents.update(recipient)
+            correspondents.update(recipient.encode())
             cdigest = correspondents.hexdigest()
             _whitelist[cdigest] = time.time()
     finally:
@@ -71,8 +71,8 @@ def check_whitelist(control_files):
     _whitelist.lock()
     try:
         for recipient in courier.control.get_recipients(control_files):
-            correspondents = hashlib.md5(recipient.lower())
-            correspondents.update(sender)
+            correspondents = hashlib.md5(recipient.lower().encode())
+            correspondents.update(sender.encode())
             cdigest = correspondents.hexdigest()
             if not cdigest in _whitelist:
                 found_all = 0

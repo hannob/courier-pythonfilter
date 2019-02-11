@@ -97,7 +97,7 @@ def do_filter(body_file, control_files):
 
     # Create a new MD5 object.  The sender/recipient/IP triplets will
     # be stored in the db in the form of an MD5 digest.
-    sender_md5 = hashlib.md5(sender)
+    sender_md5 = hashlib.md5(sender.encode())
 
     # Create a digest for each triplet and look it up first in the
     # _senders_not_passed db.  If it's found there, but is not old
@@ -116,8 +116,8 @@ def do_filter(body_file, control_files):
         recipient = recipient.lower()
 
         correspondents = sender_md5.copy()
-        correspondents.update(recipient)
-        correspondents.update(senders_ip_network)
+        correspondents.update(recipient.encode())
+        correspondents.update(senders_ip_network.encode())
         cdigest = correspondents.hexdigest()
         _senders_passed.lock()
         _senders_not_passed.lock()
