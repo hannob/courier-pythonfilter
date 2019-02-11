@@ -95,7 +95,8 @@ class XFilter:
         g.flatten(self.message)
         # Make sure that the file ends with a newline, or courier
         # will choke on the new message file.
-        bfo.seek(-1, 2)
+        bfo.seek(0, 2)
+        bfo.seek(bfo.tell() - 1, 0)
         if bfo.read(1) != '\n':
             bfo.seek(0, 2)
             bfo.write('\n')
