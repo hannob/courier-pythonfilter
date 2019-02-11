@@ -75,7 +75,7 @@ def _setup():
     except OSError:
         pass
     else:
-        ch_out_line = ch.stdout.readline()
+        ch_out_line = ch.stdout.readline().decode()
         vers_output = ch_out_line.split(' ')
         if vers_output[0] == 'Courier':
             globals()['version'] = vers_output[1]
