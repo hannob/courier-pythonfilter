@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name="courier-pythonfilter",
-      version="2.91",
+      version="2.92",
       description="Python filtering architecture for the Courier MTA.",
       author="Gordon Messmer",
       author_email="gordon@dragonsdawn.net",
