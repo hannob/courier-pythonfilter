@@ -218,10 +218,10 @@ can be useful if you are clustering Courier servers and need a shared
 storage for TtlDb.
 
 To enable SQL support, open pythonfilter-modules.conf in your text
-editor and locate the TtlDb section.  Change "type" to 'psycopg2' for
+editor and locate the ttldb section.  Change "type" to 'psycopg2' for
 PostgreSQL, and set appropriate values for the other settings.
 
-[TtlDb]
+[ttldb]
 type = 'psycopg2'
 host = 'localhost'
 port = '5432'

@@ -82,7 +82,7 @@ class TtlDbSQL:
         self.last_purged = 0
 
     def _connect(self):
-        db_config = courier.config.get_module_config('TtlDb')
+        db_config = courier.config.get_module_config('ttldb')
         try:
             self.db = self.dbapi.connect(user=db_config['user'],
                                          password=db_config['password'],
@@ -212,7 +212,7 @@ class TtlDbMySQL(TtlDbPsycopg2):
     paramstyle = 'pyformat'
 
     def _connect(self):
-        db_config = courier.config.get_module_config('TtlDb')
+        db_config = courier.config.get_module_config('ttldb')
         try:
             # MySQLdb requires a set of parameters different than PEP 249.
             self.db = self.dbapi.connect(user=db_config['user'],
@@ -241,7 +241,7 @@ class TtlDbDbm:
         self.db_lock = _thread.allocate_lock()
 
         import dbm
-        dbm_config = courier.config.get_module_config('TtlDb')
+        dbm_config = courier.config.get_module_config('ttldb')
         dbm_dir = dbm_config['dir']
         try:
             self.db = dbm.open(dbm_dir + '/' + name, 'c')
@@ -323,6 +323,6 @@ def TtlDb(name, ttl, purge_interval):
 
     A TtlDb.OpenError exception will be raised if the db can't be opened.
     """
-    db_config = courier.config.get_module_config('TtlDb')
+    db_config = courier.config.get_module_config('ttldb')
     dbtype = db_config['type']
     return _dbm_classes[dbtype](name, ttl, purge_interval)

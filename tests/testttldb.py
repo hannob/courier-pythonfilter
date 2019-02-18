@@ -21,7 +21,7 @@ import os
 import unittest
 import time
 import courier.config
-import TtlDb
+import ttldb
 
 
 class TestTtlDb(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestTtlDb(unittest.TestCase):
 
     def testdbm(self):
         courier.config._standardConfigPaths = './configfiles/pythonfilter-modules.conf'
-        db = TtlDb.TtlDb('testTtlDb', 1, 1)
+        db = ttldb.TtlDb('testTtlDb', 1, 1)
         db.purge()
         db.lock()
         value1 = time.time()
