@@ -253,15 +253,15 @@ messages.
 The configuration file must contain the location of this directory,
 as well as an indication of how long messages should be held in the
 quarantine.  Open pythonfilter-modules.conf in your text editor and
-locate the Quarantine section.
+locate the quarantine section.
 
-[Quarantine]
+[quarantine]
 siteid = '7d35f0b0-4a07-40a6-b513-f28bd50476d3'
 dir = '/var/lib/pythonfilter/quarantine'
 days = 14
-notifyRecipient = 1
-alsoNotify = 'quarantinemgr@example.com'
-userRelease = 1
+notify_recipient = 1
+also_notify = 'quarantinemgr@example.com'
+user_release = 1
 
 The siteid value is a randomly generated ID for your site.  It helps
 prevent forged requests to release items from the quarantine.  On
@@ -271,19 +271,19 @@ If "uuidgen" isn't available, any string will do.
 Set the dir value to the path which you created earlier.  Set days
 according to your preference for quarantine lifetime.
 
-The alsoNotify value may be used to send a copy of all quarantine
+The also_notify value may be used to send a copy of all quarantine
 notices to an admin account for review or tracking.
 
 If you only want to notify users that their messages are quarantined,
-but not to allow them to release the messages, set userRelease to 0,
-and do not set up the dot-courier file for the quarantine address.
-In this case, alsoNotify must be set, and users will be instructed to
+but not to allow them to release the messages, set user_release to 0,
+and do not set up the dot-courier file for the quarantine address.  In
+this case, also_notify must be set, and users will be instructed to
 reply to that address.
 
-The notifyRecipient value can be set to 0 to disable notifying users
+The notify_recipient value can be set to 0 to disable notifying users
 that messages have been quarantined.  If there is an address specified
-by the alsoNotify setting, that address will still be notified.  If
-notifyRecipient is set to 0, and no alsoNotify setting is available,
+by the also_notify setting, that address will still be notified.  If
+notify_recipient is set to 0, and no also_notify setting is available,
 then quarantines will be completely silent.
 
 After configuring the quaranting settings, you'll also need to create an

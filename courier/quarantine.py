@@ -40,7 +40,7 @@ def init():
     global config
     # Load the configuration if it has not already been loaded.
     if 'default' in config:
-        config = courier.config.get_module_config('Quarantine')
+        config = courier.config.get_module_config('quarantine')
 
 
 def _get_db():
@@ -74,14 +74,14 @@ def send_notice(message, address, sender=None):
            'Subject: Quarantine notice\r\n\r\n'
            '%s'
            % (sender, address, message))
-    # Send the recipient a notice if notifyRecipient isn't
+    # Send the recipient a notice if notify_recipient isn't
     # available, or if it is present and a true value.
     rcpts = []
-    if('notifyRecipient' not in config
-       or config['notifyRecipient']):
+    if('notify_recipient' not in config
+       or config['notify_recipient']):
         rcpts.append(address)
-    if 'alsoNotify' in config and config['alsoNotify']:
-        rcpts.append(config['alsoNotifiy'])
+    if 'also_notify' in config and config['also_notify']:
+        rcpts.append(config['also_notifiy'])
     if rcpts:
         courier.sendmail.sendmail('', rcpts, msg)
 
@@ -128,11 +128,11 @@ def quarantine(body_file, control_files, explanation):
     # Prepare notice for recipients of quarantined message
     # Some sites would prefer that only admins release messages from the
     # quarantine.
-    if('userRelease' in config
-       and config['userRelease'] == 0
-       and 'alsoNotify' in config
-       and config['alsoNotify']):
-        release_addr = config['alsoNotify']
+    if('user_release' in config
+       and config['user_release'] == 0
+       and 'also_notify' in config
+       and config['also_notify']):
+        release_addr = config['also_notify']
     else:
         release_addr = 'quarantine-%s-%s@%s' % (config['siteid'],
                                                 msgid,
