@@ -1,5 +1,5 @@
-Hacking
-=======
+Development
+===========
 
 The pythonfilter program itself is a multi-threaded daemon that loads
 filters as python modules and passes the control and data files from
@@ -26,11 +26,8 @@ at least one function, called "do_filter", declared as:
      ...
 
 The body_file argument will be the path to the file containing the
-message body.  Courier does not allow you to modify this file, but you
-may read it or give it to Python's email classes for information.
-
-The control_files argument will be a list of paths to the message's
-control files.
+message body.  The control_files argument will be a list of paths to
+the message's control files.
 
 This function will be called to filter each incoming message.  The
 return value of this function will determine how pythonfilter
@@ -259,12 +256,28 @@ get_control_data(control_files)
     's': The envelope sender
     'f': The "Received-From-MTA" record
     'e': The envid of this message, as specified in RFC1891, or None
+    'M': The "message id" of this message
+    'i': The name used to authenticate the sender, or None
     't': Either 'F' or 'H', specifying FULL or HDRS in the RET parameter
          that was given in the MAIL FROM command, as specified in RFC1891,
          or None
-    'V': 1 if the envelope sender address should be VERPed, 0 otherwise
+    'E': Expiration time of this message, in seconds as returned by the
+         time() system call
+    'p': Expiration time of this message, for the fax module
+    'W': Time at which sender will be warned if the message is still
+         undeliverable
+    'w': True if a warning has already been sent, False otherwise
+    '8': True if the message contains 8-bit data, False otherwise
+    'm': True if the message contains 8-bit headers, False otherwise
+    'V': True if the envelope sender address should be VERPed, False
+         otherwise
+    'v': vhost argument given to submit, or the domain of the auth user,
+         or None
+    'X': The reason for canceling the message if it has been cancelled,
+         or None
     'U': The security level requested for the message
     'u': The "message source" given on submit's command line
+    'T': True if backscatter should be suppressed, False otherwise
     'r': The list of recipients, as returned by get_recipients_data
 
     See courier/libs/comctlfile.h in the Courier source code, and the
@@ -326,7 +339,7 @@ get_auth_user(control_files, body_file=None)
 
 courier.xfilter:
 
-class XFilter(filterName, body_file, control_files)
+class XFilter(filter_name, body_file, control_files)
     Modify messages in the Courier spool.
 
     This class will load a specified message from Courier's spool and

@@ -3,8 +3,8 @@ Courier pythonfilter
 
 pythonfilter is a collection of useful filters for the Courier MTA,
 and a framework for developing new filters in Python.  If you are
-interested in developing your own filters, see the "Hacking" section
-below.
+interested in developing your own filters, see the "README.developers"
+file.
 
 pythonfilter can be used to filter spam and viruses, as well as
 implement other local mail policies.  The individual modules are
@@ -17,18 +17,18 @@ Installation
 
 Requirements:
  o Courier - http://www.courier-mta.org/
- o Python 2 or better - http://www.python.org/
+ o Python 3 or better - http://www.python.org/
 
 Some modules have additional requirements.  These modules are
 optional:
- o pyclamav (for "clamav") - http://xael.org/norman/python/pyclamav/
- o pydns (for "dialback") - http://pydns.sourceforge.net/
- o spf (for "spfcheck" and "whitelist_spf") - http://www.wayforward.net/spf/
+ o pyclamd (for "clamav") - https://pypi.org/project/pyClamd/
+ o py3dns (for "dialback") - https://pypi.org/project/py3dns/
+ o spf (for "spfcheck" and "whitelist_spf") - https://pypi.org/project/pyspf/
 
 pythonfilter uses Distutils to ease installation. The majority of
 people should be able to install & run pythonfilter by entering:
 
-   python setup.py install
+   python3 setup.py install
 
    mkdir /var/lib/pythonfilter
    chown daemon:daemon /var/lib/pythonfilter
