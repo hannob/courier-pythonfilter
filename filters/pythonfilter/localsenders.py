@@ -32,10 +32,10 @@ def init_filter():
     sys.stderr.write('Initialized the "localsenders" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Validate sender addresses, if their domain is locally hosted."""
     try:
-        sender = courier.control.get_sender(control_files)
+        sender = courier.control.get_sender(control_paths)
     except:
         return '451 Internal failure locating control files'
     sparts = sender.split('@')
@@ -53,7 +53,7 @@ def do_filter(body_file, control_files):
     if sender_info is None:
         return '517 Sender does not exist: %s' % sender
     if(require_auth and
-       courier.control.get_auth_user(control_files, body_file) is None):
+       courier.control.get_auth_user(control_paths, body_path) is None):
         return '517 Policy requires local senders to authenticate.'
     return ''
 

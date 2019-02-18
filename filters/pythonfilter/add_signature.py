@@ -44,8 +44,8 @@ def init_filter():
     sys.stderr.write('Initialized the "add_signature" python filter\n')
 
 
-def do_filter(body_file, control_files):
-    sender = courier.control.get_auth_user(control_files, body_file)
+def do_filter(body_path, control_paths):
+    sender = courier.control.get_auth_user(control_paths, body_path)
     if not sender:
         return ''
     sender_bits = sender.split('@')
@@ -57,9 +57,9 @@ def do_filter(body_file, control_files):
         return ''
     # Set the preferred encoding for UTF-8, which will be used in the signature
     email.charset.add_charset('utf-8', email.charset.SHORTEST, email.charset.QP, None)
-    # Load the message from the body_file
+    # Load the message from the body_path
     mfilter = courier.xfilter.XFilter('add_signature',
-                                      body_file, control_files)
+                                      body_path, control_paths)
     original = mfilter.getMessage()
     # Create a new message object
     msg = email.mime.multipart.MIMEMultipart('mixed')

@@ -45,12 +45,12 @@ def init_filter():
     sys.stderr.write('Initialized the "auto_whitelist" python filter\n')
 
 
-def whitelist_recipients(control_files):
-    sender = courier.control.get_sender(control_files).lower()
+def whitelist_recipients(control_paths):
+    sender = courier.control.get_sender(control_paths).lower()
     sender_md5 = hashlib.md5(sender.encode())
     _whitelist.lock()
     try:
-        for recipient in courier.control.get_recipients(control_files):
+        for recipient in courier.control.get_recipients(control_paths):
             recipient = recipient.lower()
             # Don't allow a whitelist between identical addresses.  Users
             # sometimes email themselves a note, which creates a path for
@@ -65,12 +65,12 @@ def whitelist_recipients(control_files):
         _whitelist.unlock()
 
 
-def check_whitelist(control_files):
+def check_whitelist(control_paths):
     found_all = 1
-    sender = courier.control.get_sender(control_files).lower()
+    sender = courier.control.get_sender(control_paths).lower()
     _whitelist.lock()
     try:
-        for recipient in courier.control.get_recipients(control_files):
+        for recipient in courier.control.get_recipients(control_paths):
             correspondents = hashlib.md5(recipient.lower().encode())
             correspondents.update(sender.encode())
             cdigest = correspondents.hexdigest()
@@ -82,7 +82,7 @@ def check_whitelist(control_files):
     return found_all
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Return a 200 code if the message looks like a reply to a message
     sent by an authenticated user.
 
@@ -93,11 +93,11 @@ def do_filter(body_file, control_files):
     """
 
     _whitelist.purge()
-    auth_user = courier.control.get_auth_user(control_files, body_file)
+    auth_user = courier.control.get_auth_user(control_paths, body_path)
     if auth_user:
-        whitelist_recipients(control_files)
+        whitelist_recipients(control_paths)
         return ''
-    if check_whitelist(control_files):
+    if check_whitelist(control_paths):
         return '200 Ok'
     # Return no decision for everyone else.
     return ''

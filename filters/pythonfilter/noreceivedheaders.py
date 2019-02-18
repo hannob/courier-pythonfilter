@@ -27,13 +27,13 @@ def init_filter():
     sys.stderr.write('Initialized the "noreceivedheaders" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Remove the Received header if the sender authenticated himself."""
-    auth_user = courier.control.get_auth_user(control_files, body_file)
+    auth_user = courier.control.get_auth_user(control_paths, body_path)
     if auth_user is None:
         return ''
-    mfilter = courier.xfilter.XFilter('noreceivedheaders', body_file,
-                                      control_files)
+    mfilter = courier.xfilter.XFilter('noreceivedheaders', body_path,
+                                      control_paths)
     mmsg = mfilter.getMessage()
     del mmsg['Received']
     submit_val = mfilter.submit()

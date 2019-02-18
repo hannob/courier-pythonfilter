@@ -24,8 +24,8 @@ import time
 from . import config
 
 
-def get_lines(control_files, key, max_lines=0):
-    """Return a list of values in the control_files matching key.
+def get_lines(control_paths, key, max_lines=0):
+    """Return a list of values in the control_paths matching key.
 
     "key" should be a one character string.  See the "Control Records"
     section of Courier's Mail Queue documentation for a list of valid
@@ -37,7 +37,7 @@ def get_lines(control_files, key, max_lines=0):
 
     """
     lines = []
-    for cf in control_files:
+    for cf in control_paths:
         cfo = open(cf)
         ctl_line = cfo.readline()
         while ctl_line:
@@ -51,22 +51,22 @@ def get_lines(control_files, key, max_lines=0):
     return lines
 
 
-def get_senders_mta(control_files):
+def get_senders_mta(control_paths):
     """Return the "Received-From-MTA" record.
 
     Courier's documentation indicates that this specifies what goes
     into this header for DSNs generated due to this message.
 
     """
-    sender_lines = get_lines(control_files, 'f', 1)
+    sender_lines = get_lines(control_paths, 'f', 1)
     if sender_lines:
         return sender_lines[0]
     return None
 
 
-def get_senders_ip(control_files):
+def get_senders_ip(control_paths):
     """Return an IP address if one is found in the "Received-From-MTA" record."""
-    sender = get_senders_mta(control_files)
+    sender = get_senders_mta(control_paths)
     if not sender:
         return None
     ipstr = sender.partition('[')[2].partition(']')[0]
@@ -78,25 +78,25 @@ def get_senders_ip(control_files):
     return str(sender_ip)
 
 
-def get_sender(control_files):
+def get_sender(control_paths):
     """Return the envelope sender."""
-    sender_lines = get_lines(control_files, 's', 1)
+    sender_lines = get_lines(control_paths, 's', 1)
     if sender_lines:
         return sender_lines[0]
     return None
 
 
-def get_recipients(control_files):
+def get_recipients(control_paths):
     """Return a list of message recipients.
 
     This list contains addresses in canonical format, after Courier's
     address rewriting and alias expansion.
 
     """
-    return [x[0] for x in get_recipients_data(control_files)]
+    return [x[0] for x in get_recipients_data(control_paths)]
 
 
-def get_recipients_data(control_files):
+def get_recipients_data(control_paths):
     """Return a list of lists with details about message recipients.
 
     Each list in the list returned will have the following elements:
@@ -106,7 +106,7 @@ def get_recipients_data(control_files):
 
     """
     recipients_data = []
-    for cf in control_files:
+    for cf in control_paths:
         rcpts = _get_recipients_from_file(cf)
         for x in rcpts:
             if x[1] is False:
@@ -114,7 +114,7 @@ def get_recipients_data(control_files):
     return recipients_data
 
 
-def _get_recipients_from_file(control_file):
+def _get_recipients_from_file(control_path):
     """Return a list of lists with details about message recipients.
 
     Each list in the list returned will have the following elements:
@@ -132,7 +132,7 @@ def _get_recipients_from_file(control_file):
             x = [len(recipients), False, r]
             recipients.append(x)
 
-    cfo = open(control_file)
+    cfo = open(control_path)
     recipients = []
     r = ['', '', ''] # This list will contain the recipient data.
     ctl_line = cfo.readline()
@@ -156,7 +156,7 @@ def _get_recipients_from_file(control_file):
     return recipients
 
 
-def get_control_data(control_files):
+def get_control_data(control_paths):
     """Return a dictionary containing all of the data that was given to submit.
 
     The dictionary will have the following elements:
@@ -210,7 +210,7 @@ def get_control_data(control_files):
             'u': None,
             'T': False,
             'r': []}
-    for cf in control_files:
+    for cf in control_paths:
         cfo = open(cf)
         ctl_line = cfo.readline()
         while ctl_line:
@@ -219,23 +219,23 @@ def get_control_data(control_files):
             if ctl_line[0] in 'w8mVT':
                 data[ctl_line[0]] = True
             ctl_line = cfo.readline()
-    data['r'] = get_recipients_data(control_files)
+    data['r'] = get_recipients_data(control_paths)
     return data
 
 
-def add_recipient(control_files, recipient):
-    """Add a recipient to a control_files set.
+def add_recipient(control_paths, recipient):
+    """Add a recipient to a control_paths set.
 
     The recipient argument must contain a canonical address.  Local
     aliases are not allowed.
 
     """
     recipient_data = [recipient, '', '']
-    add_recipient_data(control_files, recipient_data)
+    add_recipient_data(control_paths, recipient_data)
 
 
-def add_recipient_data(control_files, recipient_data):
-    """Add a recipient to a control_files set.
+def add_recipient_data(control_paths, recipient_data):
+    """Add a recipient to a control_paths set.
 
     The recipient_data argument must contain the same information that
     is normally returned by the get_recipients_data function for each
@@ -249,7 +249,7 @@ def add_recipient_data(control_files, recipient_data):
     # create a new file if necessary.
     if len(recipient_data) != 3:
         raise ValueError('recipient_data must be a list of 3 values.')
-    cf = control_files[-1]
+    cf = control_paths[-1]
     cfo = open(cf, 'a')
     cfo.write('r%s\n' % recipient_data[0])
     cfo.write('R%s\n' % recipient_data[1])
@@ -257,22 +257,22 @@ def add_recipient_data(control_files, recipient_data):
     cfo.close()
 
 
-def _mark_complete(control_file, recipient_index):
+def _mark_complete(control_path, recipient_index):
     """Mark a single recipient's delivery as completed."""
-    cfo = open(control_file, 'a')
+    cfo = open(control_path, 'a')
     cfo.seek(0, 2) # Seek to the end of the file
     cfo.write('I%d R 250 Ok - Removed by courier.control.py\n' %
               recipient_index)
     cfo.write('S%d %d\n' % (recipient_index, int(time.time())))
 
 
-def del_recipient(control_files, recipient):
+def del_recipient(control_paths, recipient):
     """Remove a recipient from the list.
 
     The recipient arg is a canonical address found in one of the
-    control files in control_files.
+    control files in control_paths.
 
-    The first recipient in the control_files that exactly matches
+    The first recipient in the control_paths that exactly matches
     the address given will be removed by way of marking that delivery
     complete, successfully.
 
@@ -280,7 +280,7 @@ def del_recipient(control_files, recipient):
     silently lost.
 
     """
-    for cf in control_files:
+    for cf in control_paths:
         rcpts = _get_recipients_from_file(cf)
         for x in rcpts:
             if(x[1] is False # Delivery is not complete for this recipient
@@ -289,14 +289,14 @@ def del_recipient(control_files, recipient):
                 return
 
 
-def del_recipient_data(control_files, recipient_data):
+def del_recipient_data(control_paths, recipient_data):
     """Remove a recipient from the list.
 
     The recipient_data arg is a list similar to the data returned by
     get_recipients_data found in one of the control files in
-    control_files.
+    control_paths.
 
-    The first recipient in the control_files that exactly matches
+    The first recipient in the control_paths that exactly matches
     the data given will be removed by way of marking that delivery
     complete, successfully.
 
@@ -306,7 +306,7 @@ def del_recipient_data(control_files, recipient_data):
     """
     if len(recipient_data) != 3:
         raise ValueError('recipient_data must be a list of 3 values.')
-    for cf in control_files:
+    for cf in control_paths:
         rcpts = _get_recipients_from_file(cf)
         for x in rcpts:
             if(x[1] is False # Delivery is not complete for this recipient
@@ -315,7 +315,7 @@ def del_recipient_data(control_files, recipient_data):
                 return
 
 
-def get_auth_user(control_files, body_file=None):
+def get_auth_user(control_paths, body_file=None):
     """Return the username used during SMTP AUTH, if available.
 
     The return value with be a string containing the username used
@@ -326,7 +326,7 @@ def get_auth_user(control_files, body_file=None):
     compatibility with older releases of pythonfilter.
 
     """
-    auth_lines = get_lines(control_files, 'i', 1)
+    auth_lines = get_lines(control_paths, 'i', 1)
     if auth_lines:
         return auth_lines[0]
     return None

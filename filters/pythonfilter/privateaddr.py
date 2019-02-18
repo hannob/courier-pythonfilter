@@ -52,9 +52,9 @@ def init_filter():
     sys.stderr.write('Initialized the "privateaddr" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Refuse mail if recipient is private, and sender is not approved."""
-    for addr in courier.control.get_recipients_data(control_files):
+    for addr in courier.control.get_recipients_data(control_paths):
         if addr[1]:
             if addr[1].startswith('rfc822;'):
                 rcpt = addr[1][7:]
@@ -66,7 +66,7 @@ def do_filter(body_file, control_files):
             rcpt = rcpt.lower()
         if rcpt in private_rcpts:
             sender_allowed = 0
-            sender = courier.control.get_sender(control_files)
+            sender = courier.control.get_sender(control_paths)
             for pattern in private_rcpts[rcpt]:
                 if _private_re[pattern].match(sender):
                     sender_allowed = 1

@@ -48,14 +48,14 @@ class XFilter:
 
     Arguments:
     filter_name -- a name identifying the filter calling this class
-    body_file -- the same argument given to the doFilter function
-    control_files -- the same argument given to the doFilter function
+    body_path -- the same argument given to the doFilter function
+    control_paths -- the same argument given to the doFilter function
 
     The class will raise xfilter.InitError when instantiated if it
-    cannot open the body_file or any of the control files.
+    cannot open the body_path or any of the control files.
 
     After creating an instance of this class, use the get_message
-    method to get the email.Message object created from the body_file.
+    method to get the email.Message object created from the body_path.
     Make any modifications required using the normal python functions
     usable with that object.
 
@@ -63,21 +63,18 @@ class XFilter:
     method to insert the new message into the spool.
 
     """
-    def __init__(self, filter_name, body_file, control_files):
+    def __init__(self, filter_name, body_path, control_paths):
         try:
-            bf_stream = open(body_file)
-        except:
-            raise InitError('Internal failure opening message data file')
-        try:
-            self.message = email.message_from_file(bf_stream)
+            with open(body_path, 'rb') as body_file:
+                self.message = email.message_from_binary_file(body_file)
         except Exception as e:
             raise InitError('Internal failure parsing message data file: %s' % str(e))
         # Save the arguments
         self.filter_name = filter_name
-        self.body_file = body_file
-        self.control_files = control_files
+        self.body_path = body_path
+        self.control_paths = control_paths
         # Parse the control files and save their data
-        self.control_data = courier.control.get_control_data(control_files)
+        self.control_data = courier.control.get_control_data(control_paths)
 
     def get_message(self):
         return self.message
@@ -89,7 +86,7 @@ class XFilter:
         return self.control_data
 
     def submit(self):
-        bfo = open(self.body_file, 'r+')
+        bfo = open(self.body_path, 'r+')
         bfo.truncate(0)
         g = email.generator.Generator(bfo, mangle_from_=False)
         g.flatten(self.message)

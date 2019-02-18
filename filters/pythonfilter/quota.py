@@ -73,9 +73,9 @@ def init_filter():
     sys.stderr.write('Initialized the "quota" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Reject mail if any recipient is over quota"""
-    rcpts = courier.control.get_recipients_data(control_files)
+    rcpts = courier.control.get_recipients_data(control_paths)
     for x in rcpts:
         (user, domain) = x[0].split('@', 1)
         if courier.config.is_local(domain):

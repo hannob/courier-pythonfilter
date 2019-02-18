@@ -26,7 +26,7 @@ def init_filter():
     sys.stderr.write('Initialized the "whitelist_auth" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Return a 200 code if the sender appears to have authenticated.
 
     Courier does not currently contain this information in its control
@@ -38,7 +38,7 @@ def do_filter(body_file, control_files):
 
     """
 
-    auth_user = courier.control.get_auth_user(control_files, body_file)
+    auth_user = courier.control.get_auth_user(control_paths, body_path)
     if auth_user:
         return '200 Ok'
     # Return no decision for everyone else.

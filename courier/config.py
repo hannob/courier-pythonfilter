@@ -118,9 +118,9 @@ def is_min_version(min_version):
     return curv >= minv
 
 
-def read1line(filename):
+def read1line(config_path):
     try:
-        cfile = open(sysconfdir + '/' + filename, 'r')
+        cfile = open(sysconfdir + '/' + config_path, 'r')
     except IOError:
         return None
     return cfile.readline().strip()

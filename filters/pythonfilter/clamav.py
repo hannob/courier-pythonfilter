@@ -27,23 +27,23 @@ local_socket = ''
 action = 'reject'
 
 
-def scan_message(body_file, control_files):
+def scan_message(body_path, control_paths):
     try:
         clamd = pyclamd.ClamdUnixSocket(local_socket)
-        avresult = clamd.scan_file(body_file)
+        avresult = clamd.scan_file(body_path)
     except pyclamd.ConnectionError as e:
         return "430 Virus scanner error: " + str(e)
-    if avresult is not None and body_file in avresult:
-        if avresult[body_file][0] == 'FOUND':
-            return handle_virus(body_file, control_files, avresult[body_file][1])
-        return "430 Virus scanner error: " + avresult[body_file][1]
+    if avresult is not None and body_path in avresult:
+        if avresult[body_path][0] == 'FOUND':
+            return handle_virus(body_path, control_paths, avresult[body_path][1])
+        return "430 Virus scanner error: " + avresult[body_path][1]
     return ''
 
 
-def handle_virus(body_file, control_files, virus_signature):
+def handle_virus(body_path, control_paths, virus_signature):
     if action == 'reject':
         return "554 Virus found - Signature is %s" % virus_signature
-    courier.quarantine.quarantine(body_file, control_files,
+    courier.quarantine.quarantine(body_path, control_paths,
                                   'The virus %s was found in the message' % virus_signature)
     return '050 OK'
 
@@ -55,14 +55,14 @@ def init_filter():
     sys.stderr.write('Initialized the "clamav" python filter\n')
 
 
-def do_filter(body_file, control_files):
-    return scan_message(body_file, control_files)
+def do_filter(body_path, control_paths):
+    return scan_message(body_path, control_paths)
 
 
 if __name__ == '__main__':
     # we only work with 1 parameter
     if len(sys.argv) < 3:
-        print("Usage: clamav.py <message_body_file> <control_files>")
+        print("Usage: clamav.py <message_body_path> <control_paths>")
         sys.exit(0)
     init_filter()
     print(do_filter(sys.argv[1], sys.argv[2:]))

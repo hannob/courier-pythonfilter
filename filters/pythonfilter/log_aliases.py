@@ -26,8 +26,8 @@ def init_filter():
     sys.stderr.write('Initialized the "log_aliases" python filter\n')
 
 
-def do_filter(body_file, control_files):
-    for addr in courier.control.get_recipients_data(control_files):
+def do_filter(body_path, control_paths):
+    for addr in courier.control.get_recipients_data(control_paths):
         if addr[1]:
             if addr[1].startswith('rfc822;'):
                 addr[1] = addr[1][7:]

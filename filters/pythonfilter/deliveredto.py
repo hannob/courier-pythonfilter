@@ -27,7 +27,7 @@ def init_filter():
     sys.stderr.write('Initialized the "deliveredto" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Check 'Delivered-to' header
 
     Reject messages if the Delivered-to header indicates a
@@ -35,11 +35,8 @@ def do_filter(body_file, control_files):
 
     """
     try:
-        bf_stream = open(body_file)
-    except:
-        return '451 Internal failure opening message data file'
-    try:
-        message = email.message_from_file(bf_stream)
+        with open(body_path, 'rb') as body_file:
+            message = email.message_from_file(body_file)
     except:
         return '451 Internal failure parsing message data file'
     if 'Delivered-To' in message:

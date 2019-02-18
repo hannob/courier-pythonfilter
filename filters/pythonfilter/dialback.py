@@ -62,7 +62,7 @@ def init_filter():
     sys.stderr.write('Initialized the dialback python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Contact the MX for this message's sender and validate their address.
 
     Validation will be done by starting an SMTP session with the MX and
@@ -72,7 +72,7 @@ def do_filter(body_file, control_files):
 
     # Grab the sender from the control files.
     try:
-        sender = courier.control.get_sender(control_files)
+        sender = courier.control.get_sender(control_paths)
     except:
         return '451 Internal failure locating control files'
     if sender == '':

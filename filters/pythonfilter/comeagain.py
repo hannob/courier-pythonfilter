@@ -45,7 +45,7 @@ def init_filter():
     sys.stderr.write('Initialized the "comeagain" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Return a temporary failure message if this sender hasn't tried to
     deliver mail previously.
 
@@ -60,7 +60,7 @@ def do_filter(body_file, control_files):
 
     # Grab the sender from the control files.
     try:
-        sender = courier.control.get_sender(control_files)
+        sender = courier.control.get_sender(control_paths)
     except Exception:
         return '451 Internal failure locating control files'
     if sender == '':
@@ -80,7 +80,7 @@ def do_filter(body_file, control_files):
     found_all = 1
     _senders.lock()
     try:
-        for recipient in courier.control.get_recipients(control_files):
+        for recipient in courier.control.get_recipients(control_paths):
             correspondents = sender_md5.copy()
             correspondents.update(recipient.encode())
             cdigest = correspondents.hexdigest()

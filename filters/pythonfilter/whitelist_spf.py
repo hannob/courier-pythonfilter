@@ -27,12 +27,12 @@ def init_filter():
     sys.stderr.write('Initialized the whitelist_spf python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Use the SPF mechanism to whitelist email."""
     try:
-        senders_mta = courier.control.get_senders_mta(control_files)
-        senders_ip = courier.control.get_senders_ip(control_files)
-        sender = courier.control.get_sender(control_files)
+        senders_mta = courier.control.get_senders_mta(control_paths)
+        senders_ip = courier.control.get_senders_ip(control_paths)
+        sender = courier.control.get_sender(control_paths)
     except:
         return '451 Internal failure locating control files'
 

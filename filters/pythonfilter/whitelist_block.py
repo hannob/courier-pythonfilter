@@ -27,7 +27,7 @@ def init_filter():
     sys.stderr.write('Initialized the "whitelist_block" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Whitelist messages based on smtpaccess.dat.
 
     The smtpaccess.dat file is checked for a BLOCK value.  If one
@@ -38,7 +38,7 @@ def do_filter(body_file, control_files):
     """
 
     try:
-        senders_ip = courier.control.get_senders_ip(control_files)
+        senders_ip = courier.control.get_senders_ip(control_paths)
     except:
         return '451 Internal failure locating control files'
 

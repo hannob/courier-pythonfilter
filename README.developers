@@ -22,11 +22,11 @@ message to stderr.  e.g.:
 Filters may have as many functions as required, but they must provide
 at least one function, called "do_filter", declared as:
 
-  def do_filter(body_file, control_files):
+  def do_filter(body_path, control_paths):
      ...
 
-The body_file argument will be the path to the file containing the
-message body.  The control_files argument will be a list of paths to
+The body_path argument will be the path to the file containing the
+message body.  The control_paths argument will be a list of paths to
 the message's control files.
 
 This function will be called to filter each incoming message.  The
@@ -209,47 +209,47 @@ apply_module_config(module_name, module_namespace)
 
 courier.control:
 
-add_recipient(control_files, recipient)
-    Add a recipient to a control_files set.
+add_recipient(control_paths, recipient)
+    Add a recipient to a control_paths set.
 
     The recipient argument must contain a canonical address.  Local
     aliases are not allowed.
 
-add_recipient_data(control_files, recipient_data)
-    Add a recipient to a control_files set.
+add_recipient_data(control_paths, recipient_data)
+    Add a recipient to a control_paths set.
 
     The recipient_data argument must contain the same information that
     is normally returned by the get_recipients_data function for each
     recipient.  Recipients should be added one at a time.
 
-del_recipient(control_files, recipient)
+del_recipient(control_paths, recipient)
     Remove a recipient from the list.
 
     The recipient arg is a canonical address found in one of the
-    control files in control_files.
+    control files in control_paths.
 
-    The first recipient in the control_files that exactly matches
+    The first recipient in the control_paths that exactly matches
     the address given will be removed by way of marking that delivery
     complete, successfully.
 
     You should log all such removals so that messages are never
     silently lost.
 
-del_recipient_data(control_files, recipient_data)
+del_recipient_data(control_paths, recipient_data)
     Remove a recipient from the list.
 
     The recipient_data arg is a list similar to the data returned by
     get_recipients_data found in one of the control files in
-    control_files.
+    control_paths.
 
-    The first recipient in the control_files that exactly matches
+    The first recipient in the control_paths that exactly matches
     the data given will be removed by way of marking that delivery
     complete, successfully.
 
     You should log all such removals so that messages are never
     silently lost.
 
-get_control_data(control_files)
+get_control_data(control_paths)
     Return a dictionary containing all of the data that was given to submit.
 
     The dictionary will have the following elements:
@@ -283,8 +283,8 @@ get_control_data(control_files)
     See courier/libs/comctlfile.h in the Courier source code, and the
     submit(8) man page for more information.
 
-get_lines(control_files, key, [max_lines])
-    Return a list of values in the control_files matching key.
+get_lines(control_paths, key, [max_lines])
+    Return a list of values in the control_paths matching key.
 
     "key" should be a one character string.  See the "Control Records"
     section of Courier's Mail Queue documentation for a list of valid
@@ -294,13 +294,13 @@ get_lines(control_files, key, [max_lines])
     than zero.  No more values than indicated by this argument will
     be returned.
 
-get_recipients(control_files)
+get_recipients(control_paths)
     Return a list of message recipients.
 
     This list contains addresses in canonical format, after Courier's
     address rewriting and alias expansion.
 
-get_recipients_data(control_files)
+get_recipients_data(control_paths)
     Return a list of lists with details about message recipients.
 
     Each list in the list returned will have the following elements:
@@ -308,38 +308,38 @@ get_recipients_data(control_files)
     1: The "original message recipient", as defined by RFC1891
     2: Zero or more characters indicating DSN behavior.
 
-get_sender(control_files)
+get_sender(control_paths)
     Return the envelope sender.
 
-get_senders_ip(control_files)
+get_senders_ip(control_paths)
     Return an IP address if one is found in the "Received-From-MTA" record.
 
-get_senders_mta(control_files)
+get_senders_mta(control_paths)
     Return the "Received-From-MTA" record.
 
     Courier's documentation indicates that this specifies what goes
     into this header for DSNs generated due to this message.
 
-get_auth_user(control_files, body_file=None)
+get_auth_user(control_paths, body_path=None)
     Return the username used during SMTP AUTH, if available.
 
     The return value with be a string containing the username used
     for authentication during submission of the message, or None,
     if authentication was not used.
 
-    The arguments are requested with control_files first in order
+    The arguments are requested with control_paths first in order
     to be more consistent with other functions in this module.
     Courier currently stores auth info only in the message header,
-    so body_file will be examined for that information.  Should that
-    ever change, and control_files contain the auth info, older
+    so body_path will be examined for that information.  Should that
+    ever change, and control_paths contain the auth info, older
     filters will not break due to changes in this interface.  Filters
     written after such a change in Courier will be able to omit the
-    body_file argument.
+    body_path argument.
 
 
 courier.xfilter:
 
-class XFilter(filter_name, body_file, control_files)
+class XFilter(filter_name, body_path, control_paths)
     Modify messages in the Courier spool.
 
     This class will load a specified message from Courier's spool and
@@ -351,14 +351,14 @@ class XFilter(filter_name, body_file, control_files)
 
     Arguments:
     filter_name -- a name identifying the filter calling this class
-    body_file -- the same argument given to the do_filter function
-    control_files -- the same argument given to the do_filter function
+    body_path -- the same argument given to the do_filter function
+    control_paths -- the same argument given to the do_filter function
 
     The class will raise xfilter.InitError when instantiated if it
-    cannot open the body_file or any of the control files.
+    cannot open the body_path or any of the control files.
 
     After creating an instance of this class, use the get_message
-    method to get the email.Message object created from the body_file.
+    method to get the email.Message object created from the body_path.
     Make any modifications required using the normal python functions
     usable with that object.
 
@@ -377,10 +377,10 @@ import courier.xfilter
 # Record in the system log that this filter was initialized.
 sys.stderr.write('Initialized the "testxfilter" python filter\n')
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Add a new header to incoming mail."""
-    mfilter = courier.xfilter.XFilter('testxfilter', body_file,
-                                      control_files)
+    mfilter = courier.xfilter.XFilter('testxfilter', body_path,
+                                      control_paths)
     mmsg = mfilter.get_message()
     mmsg['X-Test-Header'] = 'A new header!'
     submitVal = mfilter.submit()

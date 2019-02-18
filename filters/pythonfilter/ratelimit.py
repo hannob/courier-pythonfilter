@@ -54,14 +54,14 @@ def init_filter():
     sys.stderr.write('Initialized the ratelimit python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Track the number of connections from each IP and temporarily fail
     if there have been too many."""
 
     global _senders_last_purged
 
     try:
-        sender = courier.control.get_senders_ip(control_files)
+        sender = courier.control.get_senders_ip(control_paths)
         # limit_network might mangle "sender," so save a copy
         esender = sender
     except:

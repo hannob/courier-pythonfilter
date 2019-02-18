@@ -29,7 +29,7 @@ import courier.control
 
 
 message = {}
-message['xalias'] = {'control_files': ['tmp/queuefiles/control-xalias'],
+message['xalias'] = {'control_paths': ['tmp/queuefiles/control-xalias'],
                      'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
                                       'f': 'dns; localhost (localhost [127.0.0.1])',
                                       'e': '',
@@ -52,7 +52,7 @@ message['xalias'] = {'control_files': ['tmp/queuefiles/control-xalias'],
                                              'rfc822;testalias@ascension.private.dragonsdawn.net',
                                              '']]},
                      'sendersIP': '127.0.0.1'}
-message['duplicate'] = {'control_files': ['tmp/queuefiles/control-duplicate'],
+message['duplicate'] = {'control_paths': ['tmp/queuefiles/control-duplicate'],
                         'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
                                          'f': 'dns; localhost (localhost [127.0.0.1])',
                                          'e': '',
@@ -78,7 +78,7 @@ message['duplicate'] = {'control_files': ['tmp/queuefiles/control-duplicate'],
                                                 'rfc822;postmaster@ascension.private.dragonsdawn.net',
                                                 '']]},
                         'sendersIP': '127.0.0.1'}
-message['ldapalias'] = {'control_files':  ['tmp/queuefiles/control-ldapalias'],
+message['ldapalias'] = {'control_paths':  ['tmp/queuefiles/control-ldapalias'],
                         'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
                                          'f': 'dns; localhost (localhost [127.0.0.1])',
                                          'e': '',
@@ -125,79 +125,79 @@ class TestCourierControl(unittest.TestCase):
     def testGetLines(self):
         for x in message.values():
             # Deprecated function test
-            self.assertEqual(courier.control.getLines(x['control_files'], 's'),
+            self.assertEqual(courier.control.getLines(x['control_paths'], 's'),
                              [x['control_data']['s']])
-            self.assertEqual(courier.control.getLines(x['control_files'], 'f'),
+            self.assertEqual(courier.control.getLines(x['control_paths'], 'f'),
                              [x['control_data']['f']])
-            self.assertEqual(courier.control.getLines(x['control_files'], 'e'),
+            self.assertEqual(courier.control.getLines(x['control_paths'], 'e'),
                              [x['control_data']['e']])
 
             # New function test
-            self.assertEqual(courier.control.get_lines(x['control_files'], 's'),
+            self.assertEqual(courier.control.get_lines(x['control_paths'], 's'),
                              [x['control_data']['s']])
-            self.assertEqual(courier.control.get_lines(x['control_files'], 'f'),
+            self.assertEqual(courier.control.get_lines(x['control_paths'], 'f'),
                              [x['control_data']['f']])
-            self.assertEqual(courier.control.get_lines(x['control_files'], 'e'),
+            self.assertEqual(courier.control.get_lines(x['control_paths'], 'e'),
                              [x['control_data']['e']])
 
     def testGetSendersMta(self):
         for x in message.values():
             # Deprecated function test
-            self.assertEqual(courier.control.getSendersMta(x['control_files']),
+            self.assertEqual(courier.control.getSendersMta(x['control_paths']),
                              x['control_data']['f'])
 
             # New function test
-            self.assertEqual(courier.control.get_senders_mta(x['control_files']),
+            self.assertEqual(courier.control.get_senders_mta(x['control_paths']),
                              x['control_data']['f'])
 
     def testGetSendersIP(self):
         for x in message.values():
             # Deprecated function test
-            self.assertEqual(courier.control.getSendersIP(x['control_files']),
+            self.assertEqual(courier.control.getSendersIP(x['control_paths']),
                              x['sendersIP'])
 
             # New function test
-            self.assertEqual(courier.control.get_senders_ip(x['control_files']),
+            self.assertEqual(courier.control.get_senders_ip(x['control_paths']),
                              x['sendersIP'])
 
     def testGetSender(self):
         for x in message.values():
             # Deprecated function test
-            self.assertEqual(courier.control.getSender(x['control_files']),
+            self.assertEqual(courier.control.getSender(x['control_paths']),
                              x['control_data']['s'])
 
             # New function test
-            self.assertEqual(courier.control.get_sender(x['control_files']),
+            self.assertEqual(courier.control.get_sender(x['control_paths']),
                              x['control_data']['s'])
 
     def testGetRecipients(self):
         for x in message.values():
             # Deprecated function test
-            self.assertEqual(courier.control.getRecipients(x['control_files']),
+            self.assertEqual(courier.control.getRecipients(x['control_paths']),
                              [y[0] for y in x['control_data']['r']])
 
             # New function test
-            self.assertEqual(courier.control.get_recipients(x['control_files']),
+            self.assertEqual(courier.control.get_recipients(x['control_paths']),
                              [y[0] for y in x['control_data']['r']])
 
     def testGetRecipientsData(self):
         for x in message.values():
             # Deprecated function test
-            self.assertEqual(courier.control.getRecipientsData(x['control_files']),
+            self.assertEqual(courier.control.getRecipientsData(x['control_paths']),
                              x['control_data']['r'])
 
             # New function test
-            self.assertEqual(courier.control.get_recipients_data(x['control_files']),
+            self.assertEqual(courier.control.get_recipients_data(x['control_paths']),
                              x['control_data']['r'])
 
     def testGetControlData(self):
         for x in message.values():
             # Deprecated function test
-            self.assertEqual(courier.control.getControlData(x['control_files']),
+            self.assertEqual(courier.control.getControlData(x['control_paths']),
                              x['control_data'])
 
             # New function test
-            self.assertEqual(courier.control.get_control_data(x['control_files']),
+            self.assertEqual(courier.control.get_control_data(x['control_paths']),
                              x['control_data'])
 
     def testAddRecipient(self):
@@ -205,13 +205,13 @@ class TestCourierControl(unittest.TestCase):
             # Deprecated function test
             # FIXME: addRecipient isn't included in the new test here, but it is in
             # testDelRecipient.  To be fixed when backward compatibility is dropped.
-            courier.control.addRecipient(x['control_files'],
+            courier.control.addRecipient(x['control_paths'],
                                          rcpt_a[0])
-            self.assertEqual(courier.control.getRecipientsData(x['control_files']),
+            self.assertEqual(courier.control.getRecipientsData(x['control_paths']),
                              x['control_data']['r'] + [rcpt_a])
 
             # New function test
-            self.assertEqual(courier.control.get_recipients_data(x['control_files']),
+            self.assertEqual(courier.control.get_recipients_data(x['control_paths']),
                              x['control_data']['r'] + [rcpt_a])
 
     def testAddRecipientData(self):
@@ -219,57 +219,57 @@ class TestCourierControl(unittest.TestCase):
             # Deprecated function test
             # FIXME: addRecipientData isn't included in the new test here, but it is in
             # testDelRecipientData.  To be fixed when backward compatibility is dropped.
-            courier.control.addRecipientData(x['control_files'],
+            courier.control.addRecipientData(x['control_paths'],
                                              rcpt_b)
-            self.assertEqual(courier.control.getRecipientsData(x['control_files']),
+            self.assertEqual(courier.control.getRecipientsData(x['control_paths']),
                              x['control_data']['r'] + [rcpt_b])
 
             # New function test
-            self.assertEqual(courier.control.get_recipients_data(x['control_files']),
+            self.assertEqual(courier.control.get_recipients_data(x['control_paths']),
                              x['control_data']['r'] + [rcpt_b])
 
     def testDelRecipient(self):
         for x in message.values():
             # Deprecated function test
-            courier.control.addRecipient(x['control_files'],
+            courier.control.addRecipient(x['control_paths'],
                                          rcpt_a[0])
-            self.assertEqual(courier.control.getRecipientsData(x['control_files']),
+            self.assertEqual(courier.control.getRecipientsData(x['control_paths']),
                              x['control_data']['r'] + [rcpt_a])
-            courier.control.delRecipient(x['control_files'],
+            courier.control.delRecipient(x['control_paths'],
                                          rcpt_a[0])
-            self.assertEqual(courier.control.getRecipientsData(x['control_files']),
+            self.assertEqual(courier.control.getRecipientsData(x['control_paths']),
                              x['control_data']['r'])
 
             # New function test
-            courier.control.add_recipient(x['control_files'],
+            courier.control.add_recipient(x['control_paths'],
                                           rcpt_a[0])
-            self.assertEqual(courier.control.get_recipients_data(x['control_files']),
+            self.assertEqual(courier.control.get_recipients_data(x['control_paths']),
                              x['control_data']['r'] + [rcpt_a])
-            courier.control.del_recipient(x['control_files'],
+            courier.control.del_recipient(x['control_paths'],
                                           rcpt_a[0])
-            self.assertEqual(courier.control.get_recipients_data(x['control_files']),
+            self.assertEqual(courier.control.get_recipients_data(x['control_paths']),
                              x['control_data']['r'])
 
     def testDelRecipientData(self):
         for x in message.values():
             # Deprecated function test
-            courier.control.addRecipientData(x['control_files'],
+            courier.control.addRecipientData(x['control_paths'],
                                              rcpt_b)
-            self.assertEqual(courier.control.getRecipientsData(x['control_files']),
+            self.assertEqual(courier.control.getRecipientsData(x['control_paths']),
                              x['control_data']['r'] + [rcpt_b])
-            courier.control.delRecipientData(x['control_files'],
+            courier.control.delRecipientData(x['control_paths'],
                                              rcpt_b)
-            self.assertEqual(courier.control.getRecipientsData(x['control_files']),
+            self.assertEqual(courier.control.getRecipientsData(x['control_paths']),
                              x['control_data']['r'])
 
             # New function test
-            courier.control.add_recipient_data(x['control_files'],
+            courier.control.add_recipient_data(x['control_paths'],
                                                rcpt_b)
-            self.assertEqual(courier.control.get_recipients_data(x['control_files']),
+            self.assertEqual(courier.control.get_recipients_data(x['control_paths']),
                              x['control_data']['r'] + [rcpt_b])
-            courier.control.del_recipient_data(x['control_files'],
+            courier.control.del_recipient_data(x['control_paths'],
                                                rcpt_b)
-            self.assertEqual(courier.control.get_recipients_data(x['control_files']),
+            self.assertEqual(courier.control.get_recipients_data(x['control_paths']),
                              x['control_data']['r'])
 
 

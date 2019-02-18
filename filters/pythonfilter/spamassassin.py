@@ -67,15 +67,15 @@ def check_reject_condition(status, result_header):
     return None
 
 
-def do_filter(body_file, control_files):
-    msg_size = os.path.getsize(body_file)
+def do_filter(body_path, control_paths):
+    msg_size = os.path.getsize(body_path)
     if msg_size > max_msg_size:
         return ''
     try:
         userarg = ''
         if username:
             userarg = ' -u ' + username
-        cmd = '%s %s -s %d -E < %s' % (spamc_path, userarg, max_msg_size, body_file)
+        cmd = '%s %s -s %d -E < %s' % (spamc_path, userarg, max_msg_size, body_path)
         (status, output) = subprocess.getstatusoutput(cmd)
     except Exception as e:
         return "454 " + str(e)
@@ -90,8 +90,8 @@ def do_filter(body_file, control_files):
 
     # If the message wasn't rejected, then replace the message with
     # the output of spamc.
-    mfilter = courier.xfilter.XFilter('spamassassin', body_file,
-                                      control_files)
+    mfilter = courier.xfilter.XFilter('spamassassin', body_path,
+                                      control_paths)
     mfilter.setMessage(result)
     submit_val = mfilter.submit()
     return submit_val

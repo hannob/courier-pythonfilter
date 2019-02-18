@@ -26,8 +26,8 @@ def init_filter():
     sys.stderr.write('Initialized the "nosuccessdsn" python filter\n')
 
 
-def do_filter(body_file, control_files):
-    """Remove success DSNs from the control_files
+def do_filter(body_path, control_paths):
+    """Remove success DSNs from the control_paths
 
     Success DSNs are requested by some spammers with invalid return
     addresses.  Why?  I don't know.
@@ -37,13 +37,13 @@ def do_filter(body_file, control_files):
     deliveries.  If so, enable this filter.
 
     """
-    rcpts = courier.control.get_recipients_data(control_files)
+    rcpts = courier.control.get_recipients_data(control_paths)
     for x in rcpts:
         if 'S' in x[2]:
             newrcpt = x[:]
             newrcpt[2] = ''
-            courier.control.add_recipient_data(control_files, newrcpt)
-            courier.control.del_recipient_data(control_files, x)
+            courier.control.add_recipient_data(control_paths, newrcpt)
+            courier.control.del_recipient_data(control_paths, x)
     # Return no decision.
     return ''
 

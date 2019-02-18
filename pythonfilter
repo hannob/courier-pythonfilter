@@ -232,20 +232,20 @@ def process_message(active_socket, filters, active_filters):
     # using .readline()
     active_socket_file = active_socket.makefile('r')
     # Read content filename and control filenames from socket
-    body_file = active_socket_file.readline().strip()
+    body_path = active_socket_file.readline().strip()
     # Normalize file name:
-    if body_file[0] != '/':
-        body_file = courier.config.localstatedir + '/tmp/' + body_file
-    control_files = []
+    if body_path[0] != '/':
+        body_path = courier.config.localstatedir + '/tmp/' + body_path
+    control_paths = []
     while 1:
-        control_file = active_socket_file.readline()
-        if control_file == '\n':
+        control_path = active_socket_file.readline()
+        if control_path == '\n':
             break
         # Normalize file name:
-        if control_file[0] != '/':
-            control_file = (courier.config.localstatedir + '/tmp/' +
-                            control_file)
-        control_files.append(control_file.strip())
+        if control_path[0] != '/':
+            control_path = (courier.config.localstatedir + '/tmp/' +
+                            control_path)
+        control_paths.append(control_path.strip())
     # We have nothing more to read from the socket, so we can close
     # the file object
     active_socket_file.close()
@@ -265,7 +265,7 @@ def process_message(active_socket, filters, active_filters):
         if i_filter[0] in bypass:
             continue
         try:
-            reply_code = i_filter[1](body_file, control_files)
+            reply_code = i_filter[1](body_path, control_paths)
         except Exception:
             filter_error = sys.exc_info()
             sys.stderr.write('Uncaught exception in "%s" do_filter function: %s:%s\n' %
@@ -288,20 +288,20 @@ def process_message(active_socket, filters, active_filters):
         active_socket.send('200 Ok'.encode())
     else:
         active_socket.send(reply_code.encode())
-        log_file_codes(i_filter[0], reply_code, control_files)
+        log_file_codes(i_filter[0], reply_code, control_paths)
     active_socket.close()
     active_filters.dec()
     sys.stderr.flush()
 
 
-def log_file_codes(module, reply_code, control_files):
+def log_file_codes(module, reply_code, control_paths):
     # This function will not log the original list of recipients specified
     # in the SMTP session.  The recipients logged are subject to alias
     # expansion and also modification of the control files by filters.
     try:
         if not (reply_code.startswith('2') or reply_code.startswith('0')):
-            sender = courier.control.get_sender(control_files)
-            for r in courier.control.get_recipients(control_files):
+            sender = courier.control.get_sender(control_paths)
+            for r in courier.control.get_recipients(control_paths):
                 sys.stderr.write('pythonfilter %s reject,from=<%s>,addr=<%s>: %s\n' %
                                  (module, sender, r, reply_code))
     except Exception:

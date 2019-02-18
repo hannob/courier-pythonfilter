@@ -66,9 +66,9 @@ def check_archive(filename, part):
     os.rmdir(tmp_d)
     return found
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     try:
-        msg = email.message_from_file(open(body_file))
+        msg = email.message_from_file(open(body_path))
     except Exception as e:
         return "554 " + str(e)
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # that the message would be rejected, or print nothing to
     # indicate that the remaining filters would be run.
     if len(sys.argv) != 2:
-        print("Usage: attachments.py <message_body_file>")
+        print("Usage: attachments.py <message_body_path>")
         sys.exit(0)
     init_filter()
     print(do_filter(sys.argv[1], []))

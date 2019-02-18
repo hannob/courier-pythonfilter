@@ -34,7 +34,7 @@ class TestTtlDb(unittest.TestCase):
         os.system('rm -rf tmp')
 
     def testdbm(self):
-        courier.config._standardConfigPaths = './configfiles/pythonfilter-modules.conf'
+        courier.config._standard_config_paths = './configfiles/pythonfilter-modules.conf'
         db = ttldb.TtlDb('testTtlDb', 1, 1)
         db.purge()
         db.lock()

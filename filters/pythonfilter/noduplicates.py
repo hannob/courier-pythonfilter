@@ -26,19 +26,19 @@ def init_filter():
     sys.stderr.write('Initialized the "noduplicates" python filter\n')
 
 
-def do_filter(body_file, control_files):
-    """Remove duplicate addresses control_files
+def do_filter(body_path, control_paths):
+    """Remove duplicate addresses control_paths
 
     Courier will duplicate canonical addresses if their original
     address differed.
 
     """
-    rcpts = courier.control.get_recipients_data(control_files)
+    rcpts = courier.control.get_recipients_data(control_paths)
     rdups = {}
     for x in rcpts:
         if x[0] in rdups:
             sys.stderr.write('noduplicates filter: Removing duplicate address "%s" from control file.\n' % x[0])
-            courier.control.del_recipient_data(control_files, x)
+            courier.control.del_recipient_data(control_paths, x)
         rdups[x[0]] = 1
     # Return no decision.
     return ''

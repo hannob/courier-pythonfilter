@@ -34,27 +34,24 @@ def init_filter():
     sys.stderr.write('Initialized the "sentfolder" python filter\n')
 
 
-def do_filter(body_file, control_files):
-    sender = courier.control.get_auth_user(control_files, body_file)
+def do_filter(body_path, control_paths):
+    sender = courier.control.get_auth_user(control_paths, body_path)
     if not sender:
         return ''
 
     if '@' not in sender:
         sender = '%s@%s' % (sender, courier.config.me())
-    courier.sendmail.sendmail('', sender, makemsg(body_file, control_files))
+    courier.sendmail.sendmail('', sender, makemsg(body_path, control_paths))
 
     return ''
 
 
-def makemsg(body_file, control_files):
+def makemsg(body_path, control_paths):
     yield 'X-Deliver-To-Sent-Folder: ' + siteid + '\r\n'
 
     try:
-        bf_stream = open(body_file)
-    except:
-        raise SystemError('Internal failure opening message data file')
-    try:
-        msg = email.message_from_file(bf_stream)
+        with open(body_path, 'rb') as body_file:
+            msg = email.message_from_file(body_file)
     except Exception as e:
         raise SystemError('Internal failure parsing message data file: %s' % str(e))
     tos = msg.get_all('to', [])
@@ -63,7 +60,7 @@ def makemsg(body_file, control_files):
     resent_ccs = msg.get_all('resent-cc', [])
     all_recipients = [x[1] for x in email.utils.getaddresses(tos + ccs + resent_tos + resent_ccs)]
     bccs = []
-    for recipient in courier.control.get_recipients_data(control_files):
+    for recipient in courier.control.get_recipients_data(control_paths):
         if recipient[1]:
             r = recipient[1]
         else:
@@ -74,8 +71,8 @@ def makemsg(body_file, control_files):
     if bccs:
         yield 'Bcc: ' + ', '.join(bccs) + '\r\n'
 
-    bf_stream = open(body_file)
-    for line in bf_stream:
+    body_file = open(body_path)
+    for line in body_file:
         yield line
 
 

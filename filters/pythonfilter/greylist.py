@@ -58,7 +58,7 @@ def init_filter():
     sys.stderr.write('Initialized the "greylist" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Return a temporary failure message if this sender hasn't tried to
     deliver mail previously.
 
@@ -74,7 +74,7 @@ def do_filter(body_file, control_files):
 
     """
 
-    senders_ip = ipaddress.ip_address(courier.control.get_senders_ip(control_files)).exploded
+    senders_ip = ipaddress.ip_address(courier.control.get_senders_ip(control_paths)).exploded
     if '.' in senders_ip:
         # For IPv4, use the first three octets
         senders_ip_network = senders_ip[:senders_ip.rindex('.')]
@@ -84,7 +84,7 @@ def do_filter(body_file, control_files):
 
     # Grab the sender from the control files.
     try:
-        sender = courier.control.get_sender(control_files)
+        sender = courier.control.get_sender(control_paths)
     except:
         return '451 Internal failure locating control files'
     if sender == '':
@@ -112,7 +112,7 @@ def do_filter(body_file, control_files):
     found_all = 1
     biggest_time_to_go = 0
 
-    for recipient in courier.control.get_recipients(control_files):
+    for recipient in courier.control.get_recipients(control_paths):
         recipient = recipient.lower()
 
         correspondents = sender_md5.copy()

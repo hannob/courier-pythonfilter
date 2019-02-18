@@ -26,7 +26,7 @@ def init_filter():
     sys.stderr.write('Initialized the "debug" python filter\n')
 
 
-def do_filter(body_file, control_files):
+def do_filter(body_path, control_paths):
     """Print debugging information to stderr."""
 
     sys.stderr.write('Debugging filter invoked:\n')
@@ -37,9 +37,9 @@ def do_filter(body_file, control_files):
     sys.stderr.write('  UID: %s\n' % os.getuid())
     sys.stderr.write('  GID: %s\n' % os.getgid())
     sys.stderr.write('  Additional groups: %s\n' % os.getgroups())
-    sys.stderr.write('  Body: %s\n' % body_file)
-    sys.stderr.write('    Raw stat: %s\n' % (os.stat(body_file),))
-    for f in control_files:
+    sys.stderr.write('  Body: %s\n' % body_path)
+    sys.stderr.write('    Raw stat: %s\n' % (os.stat(body_path),))
+    for f in control_paths:
         sys.stderr.write('  Control file: %s\n' % f)
         sys.stderr.write('    Raw stat: %s\n' % (os.stat(f),))
     # Return no decision.
