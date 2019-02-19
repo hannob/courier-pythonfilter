@@ -47,7 +47,7 @@ def do_filter(body_path, control_paths):
 
 
 def makemsg(body_path, control_paths):
-    yield 'X-Deliver-To-Sent-Folder: ' + siteid + '\r\n'
+    yield ('X-Deliver-To-Sent-Folder: ' + siteid + '\r\n').encode()
 
     try:
         with open(body_path, 'rb') as body_file:
@@ -69,9 +69,9 @@ def makemsg(body_path, control_paths):
                 r not in bccs):
             bccs.append(r)
     if bccs:
-        yield 'Bcc: ' + ', '.join(bccs) + '\r\n'
+        yield ('Bcc: ' + ', '.join(bccs) + '\r\n').encode()
 
-    body_file = open(body_path)
+    body_file = open(body_path, 'rb')
     for line in body_file:
         yield line
 

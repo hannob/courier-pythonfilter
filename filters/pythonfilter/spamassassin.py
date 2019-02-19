@@ -71,20 +71,22 @@ def do_filter(body_path, control_paths):
     msg_size = os.path.getsize(body_path)
     if msg_size > max_msg_size:
         return ''
+
+    cmd = [spamc_path, '-s', max_msg_size, '-E']
+    if username:
+        cmd.extend(['-u', username])
     try:
-        userarg = ''
-        if username:
-            userarg = ' -u ' + username
-        cmd = '%s %s -s %d -E < %s' % (spamc_path, userarg, max_msg_size, body_path)
-        (status, output) = subprocess.getstatusoutput(cmd)
+        with open(body_path, 'r') as body_file:
+            spamc_proc = subprocess.Popen(cmd, stdin=body_file,
+                                          stdout=subprocess.PIPE)
     except Exception as e:
         return "454 " + str(e)
 
     # Parse the output of spamc into an email.message object.
-    result = email.message_from_string(output)
+    result = email.message_from_binary_file(spamc_proc.stdout)
     result_header = result['X-Spam-Status']
 
-    reject_msg = check_reject_condition(status, result_header)
+    reject_msg = check_reject_condition(spamc_proc.wait(), result_header)
     if reject_msg is not None:
         return reject_msg
 
@@ -92,7 +94,7 @@ def do_filter(body_path, control_paths):
     # the output of spamc.
     mfilter = courier.xfilter.XFilter('spamassassin', body_path,
                                       control_paths)
-    mfilter.setMessage(result)
+    mfilter.set_message(result)
     submit_val = mfilter.submit()
     return submit_val
 

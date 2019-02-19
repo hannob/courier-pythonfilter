@@ -83,7 +83,7 @@ def send_notice(message, address, sender=None):
     if 'also_notify' in config and config['also_notify']:
         rcpts.append(config['also_notifiy'])
     if rcpts:
-        courier.sendmail.sendmail('', rcpts, msg)
+        courier.sendmail.sendmail('', rcpts, msg.encode())
 
 
 def send_failure_notice(requested_id, address):
