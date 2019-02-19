@@ -51,7 +51,7 @@ def makemsg(body_path, control_paths):
 
     try:
         with open(body_path, 'rb') as body_file:
-            msg = email.message_from_file(body_file)
+            msg = email.message_from_binary_file(body_file)
     except Exception as e:
         raise SystemError('Internal failure parsing message data file: %s' % str(e))
     tos = msg.get_all('to', [])
