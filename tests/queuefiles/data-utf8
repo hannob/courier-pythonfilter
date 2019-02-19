@@ -1,0 +1,17 @@
+Received: from vagabond.private.dragonsdawn.net (application-2018121601.private.dragonsdawn.net [::ffff:10.1.10.163])
+  (AUTH: PLAIN gordon, TLS: TLS1.2,128bits,ECDHE_RSA_AES_128_GCM_SHA256)
+  by application-2018121601.private.dragonsdawn.net with ESMTPSA
+  id 0000000000020239.000000005C6B8992.000072C6; Mon, 18 Feb 2019 20:44:02 -0800
+To: Gordon Messmer <gordon@dragonsdawn.net>
+From: Gordon Messmer <gordon@dragonsdawn.net>
+Subject: =?UTF-8?B?VMOrc3Qgw5xURi04?=
+Message-ID: <7acb6485-c5f8-cff5-26aa-ada60530b276@dragonsdawn.net>
+Date: Mon, 18 Feb 2019 20:44:01 -0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+Content-Language: en-US
+
+Tëst ÜTF-8
+
+
