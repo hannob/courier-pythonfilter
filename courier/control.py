@@ -17,11 +17,18 @@
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
 import ipaddress
-import re
-import string
 import time
+import urllib.parse
 
-from . import config
+
+def try_decode(value):
+    """Return a string decoded from value, or description of malformed UTF-8"""
+    try:
+        return value.strip().decode('utf-8')
+    except UnicodeDecodeError:
+        return '(malformed utf8):%s' % urllib.parse.quote_plus(
+            value.strip(), safe='@'
+        )
 
 
 def get_lines(control_paths, key, max_lines=0):
@@ -36,18 +43,17 @@ def get_lines(control_paths, key, max_lines=0):
     be returned.
 
     """
+    key = key.encode('ascii')
     lines = []
     for cf in control_paths:
-        cfo = open(cf)
+        cfo = open(cf, 'rb')
         ctl_line = cfo.readline()
         while ctl_line:
-            if ctl_line[0] == key:
-                lines.append(ctl_line[1:].strip())
+            if ctl_line[:1] == key:
+                lines.append(try_decode(ctl_line[1:]))
                 if max_lines and len(lines) == max_lines:
                     break
             ctl_line = cfo.readline()
-        if max_lines and len(lines) == max_lines:
-            break
     return lines
 
 
@@ -132,24 +138,24 @@ def _get_recipients_from_file(control_path):
             x = [len(recipients), False, r]
             recipients.append(x)
 
-    cfo = open(control_path)
+    cfo = open(control_path, 'rb')
     recipients = []
     r = ['', '', ''] # This list will contain the recipient data.
     ctl_line = cfo.readline()
     while ctl_line:
-        if ctl_line[0] == 'r':
-            r[0] = ctl_line[1:].strip()
-        if ctl_line[0] == 'R':
-            r[1] = ctl_line[1:].strip()
-        if ctl_line[0] == 'N':
-            r[2] = ctl_line[1:].strip()
+        if ctl_line[:1] == b'r':
+            r[0] = try_decode(ctl_line[1:])
+        if ctl_line[:1] == b'R':
+            r[1] = try_decode(ctl_line[1:])
+        if ctl_line[:1] == b'N':
+            r[2] = try_decode(ctl_line[1:])
             # This completes a new record, add it to the recipient data list.
             _addr(recipients, r)
             r = ['', '', '']
-        if ctl_line[0] == 'S' or ctl_line[0] == 'F':
+        if ctl_line[:1] == b'S' or ctl_line[:1] == b'F':
             # Control file records either a successful or failed
             # delivery.  Either way, mark this recipient completed.
-            rnum = ctl_line.split(' ', 1)[0]
+            rnum = ctl_line.split(b' ', 1)[0]
             rnum = int(rnum[1:])
             recipients[rnum][1] = True
         ctl_line = cfo.readline()
@@ -211,13 +217,13 @@ def get_control_data(control_paths):
             'T': False,
             'r': []}
     for cf in control_paths:
-        cfo = open(cf)
+        cfo = open(cf, 'rb')
         ctl_line = cfo.readline()
         while ctl_line:
-            if ctl_line[0] in 'sfeMitEpWvXUu':
-                data[ctl_line[0]] = ctl_line[1:].strip()
-            if ctl_line[0] in 'w8mVT':
-                data[ctl_line[0]] = True
+            if ctl_line[:1] in b'sfeMitEpWvXUu':
+                data[ctl_line[:1].decode('ascii')] = try_decode(ctl_line[1:])
+            if ctl_line[:1] in b'w8mVT':
+                data[ctl_line[:1].decode('ascii')] = True
             ctl_line = cfo.readline()
     data['r'] = get_recipients_data(control_paths)
     return data
