@@ -45,15 +45,13 @@ def get_lines(control_paths, key, max_lines=0):
     """
     key = key.encode('ascii')
     lines = []
-    for cf in control_paths:
-        cfo = open(cf, 'rb')
-        ctl_line = cfo.readline()
-        while ctl_line:
-            if ctl_line[:1] == key:
-                lines.append(try_decode(ctl_line[1:]))
-                if max_lines and len(lines) == max_lines:
-                    break
-            ctl_line = cfo.readline()
+    for control_path in control_paths:
+        with open(control_path, 'rb') as control_file:
+            for control_line in control_file:
+                if control_line[:1] == key:
+                    lines.append(try_decode(control_line[1:]))
+                    if max_lines and len(lines) == max_lines:
+                        break
     return lines
 
 
@@ -112,11 +110,11 @@ def get_recipients_data(control_paths):
 
     """
     recipients_data = []
-    for cf in control_paths:
-        rcpts = _get_recipients_from_file(cf)
-        for x in rcpts:
-            if x[1] is False:
-                recipients_data.append(x[2])
+    for control_path in control_paths:
+        rcpts = _get_recipients_from_file(control_path)
+        for rcpt in rcpts:
+            if rcpt[1] is False:
+                recipients_data.append(rcpt[2])
     return recipients_data
 
 
@@ -132,33 +130,29 @@ def _get_recipients_from_file(control_path):
         2: Zero or more characters indicating DSN behavior.
 
     """
-
-    def _addr(recipients, r):
-        if r and r[0]:
-            x = [len(recipients), False, r]
-            recipients.append(x)
-
-    cfo = open(control_path, 'rb')
     recipients = []
-    r = ['', '', ''] # This list will contain the recipient data.
-    ctl_line = cfo.readline()
-    while ctl_line:
-        if ctl_line[:1] == b'r':
-            r[0] = try_decode(ctl_line[1:])
-        if ctl_line[:1] == b'R':
-            r[1] = try_decode(ctl_line[1:])
-        if ctl_line[:1] == b'N':
-            r[2] = try_decode(ctl_line[1:])
-            # This completes a new record, add it to the recipient data list.
-            _addr(recipients, r)
-            r = ['', '', '']
-        if ctl_line[:1] == b'S' or ctl_line[:1] == b'F':
-            # Control file records either a successful or failed
-            # delivery.  Either way, mark this recipient completed.
-            rnum = ctl_line.split(b' ', 1)[0]
-            rnum = int(rnum[1:])
-            recipients[rnum][1] = True
-        ctl_line = cfo.readline()
+    rbuf = ['', '', ''] # This list will contain the recipient data.
+    with open(control_path, 'rb') as control_file:
+        for control_line in control_file:
+            control_key = control_line[:1]
+            control_val = control_line[1:]
+            if control_key == b'r':
+                rbuf[0] = try_decode(control_val)
+            if control_key == b'R':
+                rbuf[1] = try_decode(control_val)
+            if control_key == b'N':
+                rbuf[2] = try_decode(control_val)
+                # This completes a new record, add it to the recipient data list.
+                if rbuf and rbuf[0]:
+                    rcpt = [len(recipients), False, rbuf]
+                    recipients.append(rcpt)
+                rbuf = ['', '', '']
+            if control_key in (b'S', b'F'):
+                # Control file records either a successful or failed
+                # delivery.  Either way, mark this recipient completed.
+                rnum = control_line.split(b' ', 1)[0]
+                rnum = int(rnum[1:])
+                recipients[rnum][1] = True
     return recipients
 
 
@@ -216,15 +210,15 @@ def get_control_data(control_paths):
             'u': None,
             'T': False,
             'r': []}
-    for cf in control_paths:
-        cfo = open(cf, 'rb')
-        ctl_line = cfo.readline()
-        while ctl_line:
-            if ctl_line[:1] in b'sfeMitEpWvXUu':
-                data[ctl_line[:1].decode('ascii')] = try_decode(ctl_line[1:])
-            if ctl_line[:1] in b'w8mVT':
-                data[ctl_line[:1].decode('ascii')] = True
-            ctl_line = cfo.readline()
+    for control_path in control_paths:
+        with open(control_path, 'rb') as control_file:
+            for control_line in control_file:
+                control_key = control_line[:1]
+                control_val = control_line[1:]
+                if control_key in b'sfeMitEpWvXUu':
+                    data[control_key.decode('ascii')] = try_decode(control_val)
+                if control_key in b'w8mVT':
+                    data[control_key.decode('ascii')] = True
     data['r'] = get_recipients_data(control_paths)
     return data
 
@@ -255,21 +249,20 @@ def add_recipient_data(control_paths, recipient_data):
     # create a new file if necessary.
     if len(recipient_data) != 3:
         raise ValueError('recipient_data must be a list of 3 values.')
-    cf = control_paths[-1]
-    cfo = open(cf, 'a')
-    cfo.write('r%s\n' % recipient_data[0])
-    cfo.write('R%s\n' % recipient_data[1])
-    cfo.write('N%s\n' % recipient_data[2])
-    cfo.close()
+    control_path = control_paths[-1]
+    with open(control_path, 'a') as control_file:
+        control_file.write('r%s\n' % recipient_data[0])
+        control_file.write('R%s\n' % recipient_data[1])
+        control_file.write('N%s\n' % recipient_data[2])
 
 
 def _mark_complete(control_path, recipient_index):
     """Mark a single recipient's delivery as completed."""
-    cfo = open(control_path, 'a')
-    cfo.seek(0, 2) # Seek to the end of the file
-    cfo.write('I%d R 250 Ok - Removed by courier.control.py\n' %
-              recipient_index)
-    cfo.write('S%d %d\n' % (recipient_index, int(time.time())))
+    with open(control_path, 'a') as control_file:
+        control_file.seek(0, 2) # Seek to the end of the file
+        control_file.write('I%d R 250 Ok - Removed by courier.control.py\n' %
+                           recipient_index)
+        control_file.write('S%d %d\n' % (recipient_index, int(time.time())))
 
 
 def del_recipient(control_paths, recipient):
