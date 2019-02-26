@@ -209,6 +209,13 @@ apply_module_config(module_name, module_namespace)
 
 courier.control:
 
+A NOTE ON CONTROL FILES: Control files may contain non-ASCII bytes
+from a remote host in an SMTP session.  These bytes are not guaranteed
+to be valid UTF-8.  Where such invalid strings are found, a modified
+string will be returned describing the data as malformed utf8, and
+including a percent-encoded (as in RFC 1738) version of the string.
+This module may be expanded to include a bytes interface if needed.
+
 add_recipient(control_paths, recipient)
     Add a recipient to a control_paths set.
 
