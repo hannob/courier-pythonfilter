@@ -210,15 +210,14 @@ def get_control_data(control_paths):
             'u': None,
             'T': False,
             'r': []}
-    for control_path in control_paths:
-        with open(control_path, 'rb') as control_file:
-            for control_line in control_file:
-                control_key = control_line[:1]
-                control_val = control_line[1:]
-                if control_key in b'sfeMitEpWvXUu':
-                    data[control_key.decode('ascii')] = try_decode(control_val)
-                if control_key in b'w8mVT':
-                    data[control_key.decode('ascii')] = True
+    with open(control_paths[0], 'rb') as control_file:
+        for control_line in control_file:
+            control_key = control_line[:1]
+            control_val = control_line[1:]
+            if control_key in b'sfeMitEpWvXUu':
+                data[control_key.decode('ascii')] = try_decode(control_val)
+            if control_key in b'w8mVT':
+                data[control_key.decode('ascii')] = True
     data['r'] = get_recipients_data(control_paths)
     return data
 
@@ -279,12 +278,12 @@ def del_recipient(control_paths, recipient):
     silently lost.
 
     """
-    for cf in control_paths:
-        rcpts = _get_recipients_from_file(cf)
-        for x in rcpts:
-            if(x[1] is False # Delivery is not complete for this recipient
-               and x[2][0] == recipient):
-                _mark_complete(cf, x[0])
+    for control_path in control_paths:
+        rcpts = _get_recipients_from_file(control_path)
+        for rcpt in rcpts:
+            if(rcpt[1] is False # Delivery is not complete for this recipient
+               and rcpt[2][0] == recipient):
+                _mark_complete(control_path, rcpt[0])
                 return
 
 
