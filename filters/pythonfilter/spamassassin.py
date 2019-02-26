@@ -72,7 +72,7 @@ def do_filter(body_path, control_paths):
     if msg_size > max_msg_size:
         return ''
 
-    cmd = [spamc_path, '-s', max_msg_size, '-E']
+    cmd = [spamc_path, '-s', str(max_msg_size), '-E']
     if username:
         cmd.extend(['-u', username])
     try:
