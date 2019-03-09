@@ -90,7 +90,7 @@ def do_filter(body_path, control_paths):
         # First, add this connection to the bucket:
         if now not in _senders:
             _senders[now] = {}
-        if not sender in _senders[now]:
+        if sender not in _senders[now]:
             _senders[now][sender] = 1
         else:
             _senders[now][sender] = _senders[now][sender] + 1
