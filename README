@@ -146,6 +146,10 @@ ratelimit: tracks the number of messages received from a remote host
 during a specified time interval and issues temporary failure notices
 to hosts that send too many messages.
 
+ratelimitauth: tracks the number of messages received from an
+authenticated sender during a specified time interval and issues
+temporary failure notices to users that send too many messages.
+
 sentfolder: copies messages sent by authenticated users to the sender.
 Maildrop can deliver those messages to the user's Sent folder.
 
