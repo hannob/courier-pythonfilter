@@ -82,8 +82,7 @@ def do_filter(body_path, control_paths):
         if not filename:
             continue
         if isinstance(filename, str):
-            dh = email.header.decode_header(filename)
-            filename = ''.join([str(t[0], t[1]) for t in dh])
+            filename = str(email.header.make_header(email.header.decode_header(filename)))
 
         if check_archive(filename, part):
             return "554 The extension of the attached file is blacklisted"
