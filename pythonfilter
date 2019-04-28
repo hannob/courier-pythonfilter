@@ -241,13 +241,14 @@ def accounting_finish(acct):
     acct[1][-1][1] = thread_time() - acct[1][-1][1]
 
 
-def log_accounting(acct, body_path):
+def log_accounting(acct, control_paths):
     # Total time for this message is the current thread_time minus
     # the value of thread_time when accounting began.
     total_time = thread_time() - acct[0]
     filter_times = ' '.join(['%s(%f)' % (x[0], x[1]) for x in acct[1]])
+    msgid = courier.control.get_lines(control_paths, 'M', 1)[0]
     sys.stderr.write('CPU TIME ACCOUNTING: %s processed with %f seconds: (%s)\n' %
-                     (os.path.basename(body_path), total_time, filter_times))
+                     (msgid, total_time, filter_times))
 
 
 ##############################
@@ -321,7 +322,7 @@ def process_message(active_socket, filters, active_filters):
     else:
         active_socket.send(reply_code.encode())
         log_file_codes(i_filter[0], reply_code, control_paths)
-    log_accounting(acct, body_path)
+    log_accounting(acct, control_paths)
     active_socket.close()
     active_filters.dec()
     sys.stderr.flush()
