@@ -5,7 +5,7 @@
 %define courier_libexec %(. /etc/profile.d/courier.sh ; courier-config | grep ^libexecdir | cut -f2 -d=)
 
 Name:      courier-pythonfilter
-Version:   2.93
+Version:   3.0
 Release:   1%{?dist}
 Summary:   Python filtering architecture for the Courier MTA.
 
