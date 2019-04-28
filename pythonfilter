@@ -28,6 +28,7 @@ the courierfilter process will start the program.
 ##############################
 
 import os
+import resource
 import sys
 import select
 import socket
@@ -224,6 +225,31 @@ def create_socket():
     return (filter_socket, filter_socket_path)
 
 
+def thread_time():
+    r_used = resource.getrusage(resource.RUSAGE_THREAD)
+    return r_used[0] + r_used[1]
+
+
+def accounting_start(acct, filter):
+    # Temporarily store the current thread_time in the filter's slot
+    acct[1].append([filter, thread_time()])
+
+
+def accounting_finish(acct):
+    # The filter CPU time used is the current thread_time minus the
+    # value of thread_time before the filter ran.
+    acct[1][-1][1] = thread_time() - acct[1][-1][1]
+
+
+def log_accounting(acct, body_path):
+    # Total time for this message is the current thread_time minus
+    # the value of thread_time when accounting began.
+    total_time = thread_time() - acct[0]
+    filter_times = ' '.join(['%s(%f)' % (x[0], x[1]) for x in acct[1]])
+    sys.stderr.write('CPU TIME ACCOUNTING: %s processed with %f seconds: (%s)\n' %
+                     (os.path.basename(body_path), total_time, filter_times))
+
+
 ##############################
 # Filter loop processing function
 ##############################
@@ -257,6 +283,10 @@ def process_message(active_socket, filters, active_filters):
     # Prepare a set of filters that will not be run if a module returns
     # a 2XX code, and specifies a list of filters to bypass.
     bypass = set()
+    # Prepare an object to store CPU-time accounting information.  The
+    # first value is the CPU-time used before filtering began.  The
+    # second is a list of pairs of module-name and CPU-time values.
+    acct = [thread_time(), []]
     i_filter = None
     for i_filter in filters:
         # name = i_filter[0]
@@ -264,6 +294,7 @@ def process_message(active_socket, filters, active_filters):
         # bypass = i_filter[2]
         if i_filter[0] in bypass:
             continue
+        accounting_start(acct, i_filter[0])
         try:
             reply_code = i_filter[1](body_path, control_paths)
         except Exception:
@@ -272,6 +303,7 @@ def process_message(active_socket, filters, active_filters):
                              (i_filter[0], filter_error[0], filter_error[1]))
             sys.stderr.write(''.join(traceback.format_tb(filter_error[2])))
             reply_code = ''
+        accounting_finish(acct)
         if not isinstance(reply_code, str):
             sys.stderr.write('"%s" do_filter function returned non-string\n' % i_filter[0])
             reply_code = ''
@@ -289,6 +321,7 @@ def process_message(active_socket, filters, active_filters):
     else:
         active_socket.send(reply_code.encode())
         log_file_codes(i_filter[0], reply_code, control_paths)
+    log_accounting(acct, body_path)
     active_socket.close()
     active_filters.dec()
     sys.stderr.flush()
