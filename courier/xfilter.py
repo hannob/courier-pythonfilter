@@ -86,17 +86,17 @@ class XFilter:
         return self.control_data
 
     def submit(self):
-        bfo = open(self.body_path, 'r+')
+        bfo = open(self.body_path, 'r+b')
         bfo.truncate(0)
-        g = email.generator.Generator(bfo, mangle_from_=False)
+        g = email.generator.BytesGenerator(bfo, mangle_from_=False)
         g.flatten(self.message)
         # Make sure that the file ends with a newline, or courier
         # will choke on the new message file.
         bfo.seek(0, 2)
         bfo.seek(bfo.tell() - 1, 0)
-        if bfo.read(1) != '\n':
+        if bfo.read(1) != b'\n':
             bfo.seek(0, 2)
-            bfo.write('\n')
+            bfo.write(b'\n')
         bfo.close()
         return ''
 
