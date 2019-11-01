@@ -12,6 +12,7 @@ NN
 rtestldap@ascension.private.dragonsdawn.net
 R
 N
+OTCPREMOTEIP=127.0.0.1
 I2 R 250 Ok - delivered to alias.
 S2 1186420633 r
 ulocal

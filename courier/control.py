@@ -70,16 +70,14 @@ def get_senders_mta(control_paths):
 
 def get_senders_ip(control_paths):
     """Return an IP address if one is found in the "Received-From-MTA" record."""
-    sender = get_senders_mta(control_paths)
-    if not sender:
-        return None
-    ipstr = sender.partition('[')[2].partition(']')[0]
-    if not ipstr:
-        return None
-    sender_ip = ipaddress.ip_address(ipstr)
-    if isinstance(sender_ip, ipaddress.IPv6Address) and sender_ip.ipv4_mapped:
-        return str(sender_ip.ipv4_mapped)
-    return str(sender_ip)
+    sender = get_lines(control_paths, 'O')
+    for line in sender:
+        if line.startswith('TCPREMOTEIP='):
+            sender_ip = ipaddress.ip_address(line[12:])
+            if isinstance(sender_ip, ipaddress.IPv6Address) and sender_ip.ipv4_mapped:
+                return str(sender_ip.ipv4_mapped)
+            return str(sender_ip)
+    return None
 
 
 def get_sender(control_paths):
