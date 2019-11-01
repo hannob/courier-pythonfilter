@@ -62,6 +62,8 @@ def do_filter(body_path, control_paths):
         sender = courier.control.get_auth_user(control_paths)
     except:
         return '451 Internal failure locating control files'
+    if not sender:
+        return ''
 
     _senders_lock.acquire()
     try:
