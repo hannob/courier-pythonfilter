@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # pythonfilter-quarantine -- quarantine manager for pythonfilter
 # Copyright (C) 2008  Gordon Messmer <gordon@dragonsdawn.net>
 #
@@ -51,7 +51,7 @@ def release():
 
 
 def usage():
-    print __doc__
+    print(__doc__)
     sys.exit(64)
 
 
