@@ -81,9 +81,9 @@ def send_notice(message, address, sender=None):
        or config['notify_recipient']):
         rcpts.append(address)
     if 'also_notify' in config and config['also_notify']:
-        rcpts.append(config['also_notifiy'])
+        rcpts.append(config['also_notify'])
     if rcpts:
-        courier.sendmail.sendmail('', rcpts, msg.encode())
+        courier.sendmail.sendmail('', rcpts, [msg.encode()])
 
 
 def send_failure_notice(requested_id, address):
@@ -196,7 +196,7 @@ def release(requested_id, address):
         if(x[0] == address or
            x[1] == address or
            x[1] == '%s%s' % ('rfc822;', address)):
-            courier.sendmail.sendmail('', address, quarantine_paths[0].read())
+            courier.sendmail.sendmail('', address, open(quarantine_paths[0], 'rb').readlines())
             return
     # If no address matched, alert the user that the request was invalid.
     send_failure_notice(requested_id, address)
