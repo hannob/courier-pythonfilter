@@ -99,8 +99,12 @@ def _open_dbm(path):
         sys.stderr.write('Couldn\'t load python support for reading %s\n' % path)
         raise
     except dbm.error:
-        sys.stderr.write('Error reading %s\n' % path)
-        raise
+        try:
+            import bsddb3
+            config_dbm = bsddb3.hashopen(path, 'r')
+        except:
+            sys.stderr.write('Error reading %s\n' % path)
+            raise
     return config_dbm
 
 
