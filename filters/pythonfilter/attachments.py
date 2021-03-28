@@ -47,21 +47,19 @@ def init_filter():
 def check_archive(filename, part):
     if not HAVE_LIBARCHIVE:
         return False
-    fparts = filename.split('.')
-    if fparts[-1].lower() in libarchive.FILTERS:
-        fparts.pop()
-    if fparts[-1].lower() not in libarchive.FORMATS:
-        return False
     tmp_d = tempfile.mkdtemp()
-    tmp_path = '%s/%s' % (tmp_d, filename.replace('/', ''))
-    tmp_file = open(tmp_path, 'w')
+    tmp_path = '%s/scan-archive' % (tmp_d,)
+    tmp_file = open(tmp_path, 'wb')
     tmp_file.write(part.get_payload(decode=True))
     tmp_file.close()
-    archive = libarchive.Archive(tmp_path)
     found = False
-    for entry in archive:
-        if blocked_pattern.match(entry.pathname):
-            found = True
+    try:
+        with libarchive.file_reader(tmp_path) as archive:
+            for entry in archive:
+                if blocked_pattern.match(entry.pathname):
+                    found = True
+    except libarchive.exception.ArchiveError:
+        pass
     os.unlink(tmp_path)
     os.rmdir(tmp_d)
     return found
