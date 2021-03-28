@@ -76,7 +76,7 @@ def _write_auth(auth_sock, cmd):
             ready_socks = select.select([], [auth_sock], [], TIMEOUT_WRITE)
             if not ready_socks[1]:
                 raise socket.error('Write timed out.')
-            sent = auth_sock.send(cmd)
+            sent = auth_sock.send(cmd.encode('utf-8'))
             if sent < len(cmd):
                 cmd = cmd[sent:]
             else:
@@ -94,7 +94,7 @@ def _read_auth(auth_sock, term):
         ready_socks = select.select([auth_sock], [], [], TIMEOUT_READ)
         if not ready_socks[0]:
             raise IOError('timeout when reading authdaemon reply')
-        buf = auth_sock.recv(1024)
+        buf = auth_sock.recv(1024).decode('utf-8')
         if not buf:
             raise IOError('connection closed when reading authdaemon reply')
         data += buf
