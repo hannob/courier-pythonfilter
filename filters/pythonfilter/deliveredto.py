@@ -57,4 +57,4 @@ if __name__ == '__main__':
         print('Use:  deliveredto.py <message body file>')
         sys.exit(1)
     init_filter()
-    print(do_filter(sys.argv[1], ''))
+    print(do_filter(sys.argv[1], []))
