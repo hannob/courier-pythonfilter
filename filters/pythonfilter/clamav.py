@@ -23,7 +23,7 @@ import courier.config
 import courier.quarantine
 import pyclamd
 
-local_socket = ''
+local_socket = None
 action = 'reject'
 
 
