@@ -23,6 +23,7 @@ import fcntl
 import os
 import time
 import pickle
+import shutil
 import courier.config
 import courier.control
 import courier.sendmail
@@ -58,12 +59,6 @@ def _close_db(dbm_file, lock):
     fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
     lock.close()
     dbm_file.close()
-
-
-def _copy_file(source, destination):
-    dfile = open(destination, 'w')
-    sfile = open(source, 'r')
-    dfile.write(sfile.read())
 
 
 def send_notice(message, address, sender=None):
@@ -111,12 +106,12 @@ def quarantine(body_path, control_paths, explanation):
     os.rename(q_tmp_path, quarantine_paths[0])
     ctl_path_ext = ''
     ctl_path_num = 0
-    _copy_file(body_path, quarantine_paths[0])
+    shutil.copyfile(body_path, quarantine_paths[0])
     for x in control_paths:
         ctl_path = '%s/C%s%s' % (config['dir'], msgid, ctl_path_ext)
         ctl_path_num += 1
         ctl_path_ext = '.%s' % ctl_path_num
-        _copy_file(x, ctl_path)
+        shutil.copyfile(x, ctl_path)
         quarantine_paths[1].append(ctl_path)
     # Open and lock the quarantine DB
     (dbm_file, lock) = _get_db()
