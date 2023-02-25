@@ -284,7 +284,7 @@ class TtlDbDbm:
             if time.time() > (self.last_purged + self.purge_interval):
                 # Any token whose value is less than "min_val" is no longer valid.
                 min_val = time.time() - self.ttl
-                for key in list(self.db.keys()):
+                for key in self.db.keys():
                     if float(self.db[key]) < min_val:
                         del self.db[key]
                 self.last_purged = time.time()
