@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from distutils.core import setup
+from setuptools import setup
 
 
 long_description = """pythonfilter is a collection of useful filters for the Courier MTA,
@@ -11,7 +11,7 @@ implement other local mail policies.
 """
 
 setup(name="courier-pythonfilter",
-      version="3.0.3",
+      version="3.0.4",
       description="Python filtering architecture for the Courier MTA.",
       long_description=long_description,
       author="Gordon Messmer",
