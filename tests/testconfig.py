@@ -19,16 +19,15 @@
 
 import dbm
 import os
+import tempfile
+import shutil
 import unittest
 import courier.config
 
 
-courier.config.sysconfdir = 'tmp/configfiles'
-
-
-def makedbm(name, replace_commas=0):
-    newdbm = dbm.open('tmp/configfiles/%s.dat' % name, 'c')
-    file = open('tmp/configfiles/%s' % name)
+def makedbm(name, replace_commas=0, tmpdir="."):
+    newdbm = dbm.open(f'{tmpdir}/configfiles/{name}.dat', 'c')
+    file = open(f'{tmpdir}/configfiles/{name}')
     line = file.readline()
     while line:
         parts = line.split(':', 1)
@@ -45,14 +44,15 @@ def makedbm(name, replace_commas=0):
 
 class TestCourierConfig(unittest.TestCase):
     def setUp(self):
-        os.mkdir('tmp')
-        os.system('cp -a configfiles tmp/configfiles')
-        makedbm('aliases', 1)
-        makedbm('hosteddomains')
-        makedbm('smtpaccess')
+        self.tmpdir = tempfile.mkdtemp()
+        shutil.copytree(f"{os.path.dirname(__file__)}/configfiles", f"{self.tmpdir}/configfiles")
+        courier.config.sysconfdir = f'{self.tmpdir}/configfiles'
+        makedbm('aliases', 1, tmpdir=self.tmpdir)
+        makedbm('hosteddomains', tmpdir=self.tmpdir)
+        makedbm('smtpaccess', tmpdir=self.tmpdir)
 
     def tearDown(self):
-        os.system('rm -rf tmp')
+        shutil.rmtree(self.tmpdir)
 
     def testMe(self):
         self.assertEqual(courier.config.me(),
