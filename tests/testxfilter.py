@@ -18,6 +18,8 @@
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import tempfile
+import shutil
 import unittest
 import courier.xfilter
 
@@ -25,18 +27,20 @@ import courier.xfilter
 class TestXfilter(unittest.TestCase):
 
     def setUp(self):
-        os.mkdir('tmp')
-        os.system('cp queuefiles/control-iso-8859-2 tmp')
-        os.system('cp queuefiles/data-iso-8859-2 tmp')
+        self.tmpdir = tempfile.mkdtemp()
+        shutil.copyfile(f'{os.path.dirname(__file__)}/queuefiles/control-iso-8859-2',
+                        f'{self.tmpdir}/control-iso-8859-2')
+        shutil.copyfile(f'{os.path.dirname(__file__)}/queuefiles/data-iso-8859-2',
+                        f'{self.tmpdir}/data-iso-8859-2')
 
     def tearDown(self):
-        os.system('rm -rf tmp')
+        shutil.rmtree(self.tmpdir)
 
     def testxfilter(self):
         # Ensure that xfilter can deserialize and serialize a message
         mfilter = courier.xfilter.XFilter('testxfilter',
-                                          'tmp/data-iso-8859-2',
-                                          ['tmp/control-iso-8859-2'])
+                                          f'{self.tmpdir}/data-iso-8859-2',
+                                          [f'{self.tmpdir}/control-iso-8859-2'])
         submit_val = mfilter.submit()
         self.assertEqual(submit_val, '')
 
@@ -44,8 +48,8 @@ class TestXfilter(unittest.TestCase):
         # Ensure that xfilter can deserialize and serialize a message
         # containing non-ascii data but no CTE header.
         mfilter = courier.xfilter.XFilter('testxfilter',
-                                          'tmp/data-iso-8859-2',
-                                          ['tmp/control-iso-8859-2'])
+                                          f'{self.tmpdir}/data-iso-8859-2',
+                                          [f'{self.tmpdir}/control-iso-8859-2'])
         mmsg = mfilter.get_message()
         del mmsg['Content-Transfer-Encoding']
         submit_val = mfilter.submit()
