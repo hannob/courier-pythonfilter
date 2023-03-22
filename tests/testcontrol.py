@@ -18,115 +18,14 @@
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import tempfile
+import shutil
 import unittest
+
 import courier.config
-
-
-courier.config.sysconfdir = 'tmp/configfiles'
-
-
 import courier.control
 
 
-message = {}
-message['xalias'] = {'control_paths': ['tmp/queuefiles/control-xalias'],
-                     'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
-                                      'f': 'dns; localhost (localhost [127.0.0.1])',
-                                      'e': '',
-                                      'M': '000AF5D6.46A974C9.00002706',
-                                      'i': None,
-                                      't': '',
-                                      'E': '1186115401',
-                                      'p': '1185539401',
-                                      'W': '1185525001',
-                                      'w': False,
-                                      '8': False,
-                                      'm': False,
-                                      'V': False,
-                                      'v': None,
-                                      'X': None,
-                                      'U': '',
-                                      'u': 'local',
-                                      'T': False,
-                                      'r': [['".xalias/testalias@ascension+2eprivate+2edragonsdawn+2enet"@ascension.private.dragonsdawn.net',
-                                             'rfc822;testalias@ascension.private.dragonsdawn.net',
-                                             '']]},
-                     'senders_ip': '127.0.0.1'}
-message['duplicate'] = {'control_paths': ['tmp/queuefiles/control-duplicate'],
-                        'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
-                                         'f': 'dns; localhost (localhost [127.0.0.1])',
-                                         'e': '',
-                                         'M': '000AF5DB.46B0E301.0000778F',
-                                         'i': None,
-                                         't': '',
-                                         'E': '1186602369',
-                                         'p': '1186026369',
-                                         'W': '1186011969',
-                                         'w': False,
-                                         '8': False,
-                                         'm': False,
-                                         'V': False,
-                                         'v': None,
-                                         'X': None,
-                                         'U': '',
-                                         'u': 'local',
-                                         'T': False,
-                                         'r': [['gordon@ascension.private.dragonsdawn.net',
-                                                '',
-                                                ''],
-                                               ['gordon@ascension.private.dragonsdawn.net',
-                                                'rfc822;postmaster@ascension.private.dragonsdawn.net',
-                                                '']]},
-                        'senders_ip': '127.0.0.1'}
-message['ldapalias'] = {'control_paths':  ['tmp/queuefiles/control-ldapalias'],
-                        'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
-                                         'f': 'dns; localhost (localhost [127.0.0.1])',
-                                         'e': '',
-                                         'M': '000AF5D6.46B75799.00003C4B',
-                                         'i': None,
-                                         't': '',
-                                         'E': '1187025433',
-                                         'p': '1186449433',
-                                         'W': '1186435033',
-                                         'w': False,
-                                         '8': False,
-                                         'm': False,
-                                         'V': False,
-                                         'v': None,
-                                         'X': None,
-                                         'U': '',
-                                         'u': 'local',
-                                         'T': False,
-                                         'r': [['rob@ascension.private.dragonsdawn.net',
-                                                '',
-                                                'N'],
-                                               ['gordon@ascension.private.dragonsdawn.net',
-                                                '',
-                                                'N']]},
-                        'senders_ip': '127.0.0.1'}
-message['iso-8859-2'] = {'control_paths': ['tmp/queuefiles/control-iso-8859-2'],
-                         'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
-                                          'f': 'dns; localhost (localhost [127.0.0.1])',
-                                          'e': '',
-                                          'M': '000AF5DB.46B0E301.0000778F',
-                                          'i': None,
-                                          't': '',
-                                          'E': '1186602369',
-                                          'p': '1186026369',
-                                          'W': '1186011969',
-                                          'w': False,
-                                          '8': False,
-                                          'm': False,
-                                          'V': False,
-                                          'v': None,
-                                          'X': None,
-                                          'U': '',
-                                          'u': 'local',
-                                          'T': False,
-                                          'r': [['(malformed utf8):t%EBst-is%F6-8859@ascension.private.dragonsdawn.net',
-                                                 '',
-                                                 '']]},
-                         'senders_ip': '127.0.0.1'}
 rcpt_a = ['testcontrol@ascension.private.dragonsdawn.net',
           '',
           '']
@@ -138,15 +37,116 @@ rcpt_b = ['testcontrol@ascension.private.dragonsdawn.net',
 class TestCourierControl(unittest.TestCase):
 
     def setUp(self):
-        os.mkdir('tmp')
-        os.system('cp -a queuefiles tmp/queuefiles')
-        os.system('cp -a configfiles tmp/configfiles')
+        self.tmpdir = tempfile.mkdtemp()
+        shutil.copytree(f"{os.path.dirname(__file__)}/queuefiles", f"{self.tmpdir}/queuefiles")
+        shutil.copytree(f"{os.path.dirname(__file__)}/configfiles", f"{self.tmpdir}/configfiles")
+        courier.config.sysconfdir = f'{self.tmpdir}/configfiles'
+
+        self.message = {}
+        self.message['xalias'] = {'control_paths': [self.tmpdir + '/queuefiles/control-xalias'],
+                                  'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
+                                                   'f': 'dns; localhost (localhost [127.0.0.1])',
+                                                   'e': '',
+                                                   'M': '000AF5D6.46A974C9.00002706',
+                                                   'i': None,
+                                                   't': '',
+                                                   'E': '1186115401',
+                                                   'p': '1185539401',
+                                                   'W': '1185525001',
+                                                   'w': False,
+                                                   '8': False,
+                                                   'm': False,
+                                                   'V': False,
+                                                   'v': None,
+                                                   'X': None,
+                                                   'U': '',
+                                                   'u': 'local',
+                                                   'T': False,
+                                                   'r': [['".xalias/testalias@ascension+2eprivate+2edragonsdawn+2enet"@ascension.private.dragonsdawn.net',
+                                                          'rfc822;testalias@ascension.private.dragonsdawn.net',
+                                                          '']]},
+                                  'senders_ip': '127.0.0.1'}
+        self.message['duplicate'] = {'control_paths': [self.tmpdir + '/queuefiles/control-duplicate'],
+                                     'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
+                                                      'f': 'dns; localhost (localhost [127.0.0.1])',
+                                                      'e': '',
+                                                      'M': '000AF5DB.46B0E301.0000778F',
+                                                      'i': None,
+                                                      't': '',
+                                                      'E': '1186602369',
+                                                      'p': '1186026369',
+                                                      'W': '1186011969',
+                                                      'w': False,
+                                                      '8': False,
+                                                      'm': False,
+                                                      'V': False,
+                                                      'v': None,
+                                                      'X': None,
+                                                      'U': '',
+                                                      'u': 'local',
+                                                      'T': False,
+                                                      'r': [['gordon@ascension.private.dragonsdawn.net',
+                                                             '',
+                                                             ''],
+                                                            ['gordon@ascension.private.dragonsdawn.net',
+                                                             'rfc822;postmaster@ascension.private.dragonsdawn.net',
+                                                             '']]},
+                                     'senders_ip': '127.0.0.1'}
+        self.message['ldapalias'] = {'control_paths': [self.tmpdir + '/queuefiles/control-ldapalias'],
+                                     'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
+                                                      'f': 'dns; localhost (localhost [127.0.0.1])',
+                                                      'e': '',
+                                                      'M': '000AF5D6.46B75799.00003C4B',
+                                                      'i': None,
+                                                      't': '',
+                                                      'E': '1187025433',
+                                                      'p': '1186449433',
+                                                      'W': '1186435033',
+                                                      'w': False,
+                                                      '8': False,
+                                                      'm': False,
+                                                      'V': False,
+                                                      'v': None,
+                                                      'X': None,
+                                                      'U': '',
+                                                      'u': 'local',
+                                                      'T': False,
+                                                      'r': [['rob@ascension.private.dragonsdawn.net',
+                                                             '',
+                                                             'N'],
+                                                            ['gordon@ascension.private.dragonsdawn.net',
+                                                             '',
+                                                             'N']]},
+                                     'senders_ip': '127.0.0.1'}
+        self.message['iso-8859-2'] = {'control_paths': [self.tmpdir + '/queuefiles/control-iso-8859-2'],
+                                      'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
+                                                       'f': 'dns; localhost (localhost [127.0.0.1])',
+                                                       'e': '',
+                                                       'M': '000AF5DB.46B0E301.0000778F',
+                                                       'i': None,
+                                                       't': '',
+                                                       'E': '1186602369',
+                                                       'p': '1186026369',
+                                                       'W': '1186011969',
+                                                       'w': False,
+                                                       '8': False,
+                                                       'm': False,
+                                                       'V': False,
+                                                       'v': None,
+                                                       'X': None,
+                                                       'U': '',
+                                                       'u': 'local',
+                                                       'T': False,
+                                                       'r': [['(malformed utf8):t%EBst-is%F6-8859@ascension.private.dragonsdawn.net',
+                                                              '',
+                                                              '']]},
+                                      'senders_ip': '127.0.0.1'}
 
     def tearDown(self):
-        os.system('rm -rf tmp')
+        shutil.rmtree(self.tmpdir)
 
     def testGetLines(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             self.assertEqual(courier.control.getLines(x['control_paths'], 's'),
                              [x['control_data']['s']])
@@ -164,7 +164,7 @@ class TestCourierControl(unittest.TestCase):
                              [x['control_data']['e']])
 
     def testGetSendersMta(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             self.assertEqual(courier.control.getSendersMta(x['control_paths']),
                              x['control_data']['f'])
@@ -174,7 +174,7 @@ class TestCourierControl(unittest.TestCase):
                              x['control_data']['f'])
 
     def testGetSendersIP(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             self.assertEqual(courier.control.getSendersIP(x['control_paths']),
                              x['senders_ip'])
@@ -184,7 +184,7 @@ class TestCourierControl(unittest.TestCase):
                              x['senders_ip'])
 
     def testGetSender(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             self.assertEqual(courier.control.getSender(x['control_paths']),
                              x['control_data']['s'])
@@ -194,7 +194,7 @@ class TestCourierControl(unittest.TestCase):
                              x['control_data']['s'])
 
     def testGetRecipients(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             self.assertEqual(courier.control.getRecipients(x['control_paths']),
                              [y[0] for y in x['control_data']['r']])
@@ -204,7 +204,7 @@ class TestCourierControl(unittest.TestCase):
                              [y[0] for y in x['control_data']['r']])
 
     def testGetRecipientsData(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             self.assertEqual(courier.control.getRecipientsData(x['control_paths']),
                              x['control_data']['r'])
@@ -214,7 +214,7 @@ class TestCourierControl(unittest.TestCase):
                              x['control_data']['r'])
 
     def testGetControlData(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             self.assertEqual(courier.control.getControlData(x['control_paths']),
                              x['control_data'])
@@ -224,7 +224,7 @@ class TestCourierControl(unittest.TestCase):
                              x['control_data'])
 
     def testAddRecipient(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             # FIXME: addRecipient isn't included in the new test here, but it is in
             # testDelRecipient.  To be fixed when backward compatibility is dropped.
@@ -238,7 +238,7 @@ class TestCourierControl(unittest.TestCase):
                              x['control_data']['r'] + [rcpt_a])
 
     def testAddRecipientData(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             # FIXME: addRecipientData isn't included in the new test here, but it is in
             # testDelRecipientData.  To be fixed when backward compatibility is dropped.
@@ -252,7 +252,7 @@ class TestCourierControl(unittest.TestCase):
                              x['control_data']['r'] + [rcpt_b])
 
     def testDelRecipient(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             courier.control.addRecipient(x['control_paths'],
                                          rcpt_a[0])
@@ -274,7 +274,7 @@ class TestCourierControl(unittest.TestCase):
                              x['control_data']['r'])
 
     def testDelRecipientData(self):
-        for x in message.values():
+        for x in self.message.values():
             # Deprecated function test
             courier.control.addRecipientData(x['control_paths'],
                                              rcpt_b)
