@@ -21,10 +21,15 @@ import os
 import unittest
 import time
 import courier.config
-import ttldb
+try:
+    import ttldb
+    ttldbimport = True
+except ModuleNotFoundError:
+    ttldbimport = False
 
 
 class TestTtlDb(unittest.TestCase):
+    @unittest.skipUnless(ttldbimport, "Skipping ttldb test, not installed")
 
     def setUp(self):
         os.mkdir('tmp')
