@@ -18,25 +18,28 @@
 # along with pythonfilter.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
 import unittest
 import courier.xfilter
+
+test_root = os.path.dirname(__file__)
 
 
 class TestXfilter(unittest.TestCase):
 
     def setUp(self):
-        os.mkdir('tmp')
-        os.system('cp queuefiles/control-iso-8859-2 tmp')
-        os.system('cp queuefiles/data-iso-8859-2 tmp')
+        os.mkdir(f'{test_root}/tmp')
+        shutil.copy(f'{test_root}/queuefiles/control-iso-8859-2', f'{test_root}/tmp')
+        shutil.copy(f'{test_root}/queuefiles/data-iso-8859-2', f'{test_root}/tmp')
 
     def tearDown(self):
-        os.system('rm -rf tmp')
+        shutil.rmtree(f'{test_root}/tmp')
 
     def testxfilter(self):
         # Ensure that xfilter can deserialize and serialize a message
         mfilter = courier.xfilter.XFilter('testxfilter',
-                                          'tmp/data-iso-8859-2',
-                                          ['tmp/control-iso-8859-2'])
+                                          f'{test_root}/tmp/data-iso-8859-2',
+                                          [f'{test_root}/tmp/control-iso-8859-2'])
         submit_val = mfilter.submit()
         self.assertEqual(submit_val, '')
 
@@ -44,8 +47,8 @@ class TestXfilter(unittest.TestCase):
         # Ensure that xfilter can deserialize and serialize a message
         # containing non-ascii data but no CTE header.
         mfilter = courier.xfilter.XFilter('testxfilter',
-                                          'tmp/data-iso-8859-2',
-                                          ['tmp/control-iso-8859-2'])
+                                          f'{test_root}/tmp/data-iso-8859-2',
+                                          [f'{test_root}/tmp/control-iso-8859-2'])
         mmsg = mfilter.get_message()
         del mmsg['Content-Transfer-Encoding']
         submit_val = mfilter.submit()
