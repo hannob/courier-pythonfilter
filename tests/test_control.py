@@ -19,6 +19,7 @@
 
 import os
 import unittest
+import shutil
 import courier.config
 
 
@@ -29,7 +30,7 @@ import courier.control
 
 
 message = {}
-message['xalias'] = {'control_paths': ['tmp/queuefiles/control-xalias'],
+message['xalias'] = {'control_paths': [f'{os.path.dirname(__file__)}/tmp/queuefiles/control-xalias'],
                      'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
                                       'f': 'dns; localhost (localhost [127.0.0.1])',
                                       'e': '',
@@ -52,7 +53,7 @@ message['xalias'] = {'control_paths': ['tmp/queuefiles/control-xalias'],
                                              'rfc822;testalias@ascension.private.dragonsdawn.net',
                                              '']]},
                      'senders_ip': '127.0.0.1'}
-message['duplicate'] = {'control_paths': ['tmp/queuefiles/control-duplicate'],
+message['duplicate'] = {'control_paths': [f'{os.path.dirname(__file__)}/tmp/queuefiles/control-duplicate'],
                         'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
                                          'f': 'dns; localhost (localhost [127.0.0.1])',
                                          'e': '',
@@ -78,7 +79,7 @@ message['duplicate'] = {'control_paths': ['tmp/queuefiles/control-duplicate'],
                                                 'rfc822;postmaster@ascension.private.dragonsdawn.net',
                                                 '']]},
                         'senders_ip': '127.0.0.1'}
-message['ldapalias'] = {'control_paths':  ['tmp/queuefiles/control-ldapalias'],
+message['ldapalias'] = {'control_paths':  [f'{os.path.dirname(__file__)}/tmp/queuefiles/control-ldapalias'],
                         'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
                                          'f': 'dns; localhost (localhost [127.0.0.1])',
                                          'e': '',
@@ -104,7 +105,7 @@ message['ldapalias'] = {'control_paths':  ['tmp/queuefiles/control-ldapalias'],
                                                 '',
                                                 'N']]},
                         'senders_ip': '127.0.0.1'}
-message['iso-8859-2'] = {'control_paths': ['tmp/queuefiles/control-iso-8859-2'],
+message['iso-8859-2'] = {'control_paths': [f'{os.path.dirname(__file__)}/tmp/queuefiles/control-iso-8859-2'],
                          'control_data': {'s': 'root@ascension.private.dragonsdawn.net',
                                           'f': 'dns; localhost (localhost [127.0.0.1])',
                                           'e': '',
@@ -138,12 +139,11 @@ rcpt_b = ['testcontrol@ascension.private.dragonsdawn.net',
 class TestCourierControl(unittest.TestCase):
 
     def setUp(self):
-        os.mkdir('tmp')
-        os.system('cp -a queuefiles tmp/queuefiles')
-        os.system('cp -a configfiles tmp/configfiles')
+        shutil.copytree(f'{os.path.dirname(__file__)}/queuefiles', f'{os.path.dirname(__file__)}/tmp/queuefiles')
+        shutil.copytree(f'{os.path.dirname(__file__)}/configfiles', f'{os.path.dirname(__file__)}/tmp/configfiles')
 
     def tearDown(self):
-        os.system('rm -rf tmp')
+        shutil.rmtree(f'{os.path.dirname(__file__)}/tmp')
 
     def testGetLines(self):
         for x in message.values():
