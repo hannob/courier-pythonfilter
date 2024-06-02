@@ -88,4 +88,4 @@ class TestPythonfilter(unittest.TestCase):
         status = sock.recv(1024).decode()
         # print('Status: %s' % status)
 
-        assert status == '200 Ok'
+        self.assertEqual(status, '200 Ok')
