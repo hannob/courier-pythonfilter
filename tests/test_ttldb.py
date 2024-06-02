@@ -19,22 +19,23 @@
 
 import os
 import unittest
+import shutil
 import time
 import courier.config
-import ttldb
+from filters.pythonfilter import ttldb
 
 
 class TestTtlDb(unittest.TestCase):
 
     def setUp(self):
-        os.mkdir('tmp')
-        os.mkdir('tmp/pythonfilter')
+        os.mkdir(f'{os.path.dirname(__file__)}/tmp')
+        os.mkdir(f'{os.path.dirname(__file__)}/tmp/pythonfilter')
 
     def tearDown(self):
-        os.system('rm -rf tmp')
+        shutil.rmtree(f'{os.path.dirname(__file__)}/tmp')
 
     def testdbm(self):
-        courier.config._standard_config_paths = './configfiles/pythonfilter-modules.conf'
+        courier.config._standard_config_paths = f'{os.path.dirname(__file__)}/configfiles/pythonfilter-modules.conf'
         db = ttldb.TtlDb('testTtlDb', 1, 1)
         db.purge()
         db.lock()
