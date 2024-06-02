@@ -1,16 +1,16 @@
 #!/bin/sh
 
-pwd="$(pwd)"
+test_dir="$(dirname $(realpath $0))"
 
 cat <<EOF
-prefix=${pwd}/lib/courier
-exec_prefix=${pwd}/lib/courier
-bindir=${pwd}/lib/courier/bin
-sbindir=${pwd}/lib/courier/sbin
-libexecdir=${pwd}/lib/courier/libexec
-sysconfdir=${pwd}/etc/courier
-datadir=${pwd}/lib/courier/share
-localstatedir=${pwd}/spool/courier
+prefix=${test_dir}/lib/courier
+exec_prefix=${test_dir}/lib/courier
+bindir=${test_dir}/lib/courier/bin
+sbindir=${test_dir}/lib/courier/sbin
+libexecdir=${test_dir}/lib/courier/libexec
+sysconfdir=${test_dir}/etc/courier
+datadir=${test_dir}/lib/courier/share
+localstatedir=${test_dir}/spool/courier
 mailuser=daemon
 mailgroup=daemon
 mailuid=2
