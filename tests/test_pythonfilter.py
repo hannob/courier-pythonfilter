@@ -40,6 +40,9 @@ else:
 
 class TestPythonfilter(unittest.TestCase):
     def setUp(self):
+        # create socket directory
+        sockdir = f'{project_root}/tests/spool/courier/allfilters'
+        os.makedirs(sockdir, exist_ok=True)
         # File descriptor 3 is reserved while creating pipes.
         fd3 = open('/dev/null')
         # pythonfilter will close one end of this pipe to signal that it
