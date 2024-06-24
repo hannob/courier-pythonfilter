@@ -11,7 +11,7 @@ implement other local mail policies.
 """
 
 setup(name="courier-pythonfilter",
-      version="3.0.5",
+      version="3.0.6",
       description="Python filtering architecture for the Courier MTA.",
       long_description=long_description,
       author="Gordon Messmer",
